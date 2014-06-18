@@ -2,12 +2,11 @@
         {if $PIWIK_USE_PROXY eq true}
             {literal}var u= "{/literal}{$PIWIK_HOST}{literal}";{/literal}
         {else}
-            {literal}var u=(("https:" == document.location.protocol) ? "https://{/literal}{$PIWIK_HOST}{literal}" : "http://{/literal}{$PIWIK_HOST}{literal}");{/literal}
+            {literal}var u= "//{/literal}{$PIWIK_HOST}{literal}" : "//{/literal}{$PIWIK_HOST}{literal}");{/literal}
         {/if}{literal}
         var _paq = _paq || [];
         
-        _paq.push(["setSiteId", {/literal}{$PIWIK_SITEID}{literal}]);
-        {/literal}
+        _paq.push(["setSiteId", {/literal}{$PIWIK_SITEID}{literal}]);{/literal}
         {if $PIWIK_USE_PROXY eq true}
             {literal}_paq.push(["setTrackerUrl",u]);{/literal}
         {else}
@@ -58,4 +57,4 @@
     {/literal}
 </script>
 {* let's help get those harvesters and other, comment spammers see http://projecthoneypot.org/ *}
-<a href="http://cmjscripter.net/independence.php" style="display:none;">Most sold products</a>
+<a href="//cmjscripter.net/independence.php" style="display:none;">Most sold products</a>

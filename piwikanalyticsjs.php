@@ -28,7 +28,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, \Context $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.1';
+        $this->version = '0.2';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
@@ -39,7 +39,7 @@ class piwikanalyticsjs extends Module {
         if (!Configuration::get('PIWIK_TOKEN_AUTH'))
             $this->warning = (isset($this->warning) ? $this->warning . '<br/>' : '') . $this->l('PIWIK is not ready to roll you need to configure the auth token');
         if ($this->id && !Configuration::get('PIWIK_SITEID'))
-            $this->warning = (isset($this->warning) ? $this->warning . '<br/>' : '') . $this->l('You have not yet set your Google Analytics ID');
+            $this->warning = (isset($this->warning) ? $this->warning . '<br/>' : '') . $this->l('You have not yet set your Piwik Analytics ID');
         if (!Configuration::get('PIWIK_HOST'))
             $this->warning = (isset($this->warning) ? $this->warning . '<br/>' : '') . $this->l('PIWIK is not ready to roll you need to configure the piwik server url');
 
@@ -54,7 +54,11 @@ class piwikanalyticsjs extends Module {
         } catch (Exception $ex) {
             
         }
-        return parent::uninstall();
+        return Configuration::deleteByName('PIWIK_TAPID') && 
+                Configuration::deleteByName('PIWIK_USE_PROXY') &&
+                Configuration::deleteByName('PIWIK_HOST') &&
+                Configuration::deleteByName('PIWIK_TOKEN_AUTH') &&
+                parent::uninstall();
     }
 
     public function install() {
@@ -70,9 +74,9 @@ class piwikanalyticsjs extends Module {
         if ($tabid = $tab->add()) {
             Configuration::updateValue('PIWIK_TAPID', $tabid);
         }
+
         Configuration::updateValue('PIWIK_USE_PROXY', 1);
         return (parent::install() &&
-                $this->registerHook('header') &&
                 $this->registerHook('footer') &&
                 $this->registerHook('actionSearch') &&
                 $this->registerHook('displayRightColumnProduct') &&
@@ -81,8 +85,6 @@ class piwikanalyticsjs extends Module {
 
     public function getContent() {
         $_html = "";
-        Configuration::get('PIWIK_HOST');
-        Configuration::get('PIWIK_TOKEN_AUTH');
         if (Tools::isSubmit('submitUpdate' . $this->name)) {
             if (Tools::getIsset('PIWIK_HOST'))
                 Configuration::updateValue('PIWIK_HOST', Tools::getValue('PIWIK_HOST', ''));
@@ -130,7 +132,7 @@ class piwikanalyticsjs extends Module {
                     'type' => 'text',
                     'label' => $this->l('Piwik Host'),
                     'name' => 'PIWIK_HOST',
-                    'desc' => $this->l('Example: www.example.com/piwik/ (with protocol and / at the end!)'),
+                    'desc' => $this->l('Example: www.example.com/piwik/ (without protocol and with / at the end!)'),
                     'hint' => $this->l('The host where your piwik is installed.!'),
                     'required' => true
                 ),
@@ -199,10 +201,12 @@ class piwikanalyticsjs extends Module {
 
     /**
      * PIWIK don't track links on the same site eg. 
-     * if product is view in an iframe so we add this and makes sure that it is content only view 
+     * if product is view in an iframe so we add this and make sure that it is content only view 
+     * @param type $param
+     * @return type
      */
     public function hookdisplayRightColumnProduct($param) {
-        if ((int) Tools::getValue('content_only') > 0 && get_class($this->context->controller) == 'ProductController') { // we also do this in the tpl file.!
+        if ((int) Tools::getValue('content_only') > 0 && get_class($this->context->controller) == 'ProductController') {
             return $this->hookFooter($param);
         }
     }
@@ -242,7 +246,7 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign('PIWIK_SITEID', Configuration::get('PIWIK_SITEID'));
 
             $this->context->smarty->assign('PIWIK_ORDER', TRUE);
-            
+
             $this->context->smarty->assign('PIWIK_CART', FALSE);
 
             $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', '*.' . str_replace('www.', '', Tools::getShopDomain()));

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+	<name>piwikanalyticsjs</name>
+	<displayName><![CDATA[Piwik Web Analytics]]></displayName>
+	<version><![CDATA[0.2]]></version>
+	<description><![CDATA[Piwik Web Analytics Javascript plugin]]></description>
+	<author><![CDATA[CMJ Scripter]]></author>
+	<tab><![CDATA[analytics_stats]]></tab>
+	<confirmUninstall><![CDATA[Are you sure you want to delete this plugin ?]]></confirmUninstall>
+	<is_configurable>1</is_configurable>
+	<need_instance>1</need_instance>
+	<limited_countries></limited_countries>
+</module>
