@@ -10,9 +10,6 @@ if (!defined('_PS_VERSION_'))
  */
 class PiwikAnalyticsController extends ModuleAdminController {
 
-    private $tabs = array();
-    private $tabs_content = array();
-
     public function init() {
         parent::init();
 
@@ -26,8 +23,11 @@ class PiwikAnalyticsController extends ModuleAdminController {
     public function initContent() {
         if ($this->ajax)
             return;
-        $this->toolbar_title = $this->l('Stats', 'PiwikAnalytics');
 
+        $this->initTabModuleList();
+        $this->addToolBarModulesListButton();
+        $this->toolbar_title = $this->l('Stats', 'PiwikAnalytics');
+        
         if (_PS_VERSION_ < '1.6')
             $this->bootstrap = false;
         else
@@ -38,9 +38,27 @@ class PiwikAnalyticsController extends ModuleAdminController {
             if ($this->className)
                 $this->loadObject(true);
 
-
-            $this->addCSS($this->module->getPathUri() . 'css/admin.css');
-            $this->content .= $this->displayContent();
+            $this->content .= <<< EOF
+<script type="text/javascript">
+  function WidgetizeiframeDashboardLoaded() {
+      var w = $('#content').width();
+      var h = $('body').height();
+      $('#WidgetizeiframeDashboard').width('100%');
+      $('#WidgetizeiframeDashboard').height(h);
+  }
+</script>   
+EOF;
+            $this->content .= ''
+                    . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" src="http://'
+                    . Configuration::get('PIWIK_HOST') . 'index.php'
+                    . '?module=Widgetize'
+                    . '&action=iframe'
+                    . '&moduleToWidgetize=Dashboard'
+                    . '&actionToWidgetize=index'
+                    . '&idSite=' . (int) Configuration::get('PIWIK_SITEID')
+                    . '&period=day'
+                    . '&token_auth=' . Configuration::get('PIWIK_TOKEN_AUTH')
+                    . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
         }
         $this->context->smarty->assign('help_link', 'http://cmjscripter.net/public/2014/01/24/piwik-traking-prestashop/?_ps=' . Tools::getShopDomainSsl());
 
@@ -50,25 +68,6 @@ class PiwikAnalyticsController extends ModuleAdminController {
             'page_header_toolbar_title' => $this->page_header_toolbar_title,
             'page_header_toolbar_btn' => $this->page_header_toolbar_btn
         ));
-    }
-
-    public function displayContent() {
-        $this->context->smarty->assign(array(
-            'base_link' => $this->context->link->getAdminLink('PiwikAnalytics'),
-            'PIWIK_HOST' => '//' . Configuration::get('PIWIK_HOST') . 'index.php',
-            'PIWIK_TOKEN_AUTH' => Configuration::get('PIWIK_TOKEN_AUTH'),
-            'PIWIK_SITEID' => (int) Configuration::get('PIWIK_SITEID'),
-            'LANGUAGE' => $this->context->language->iso_code,
-        ));
-        $tpl = $this->createTemplate('content.tpl');
-        return $tpl->fetch();
-    }
-
-    public function createTemplate($tpl_name) {
-        if (file_exists(_PS_THEME_DIR_ . 'modules/' . $this->module->name . '/views/templates/admin/PiwikAnalytics/' . $tpl_name))
-            return $this->context->smarty->createTemplate(_PS_THEME_DIR_ . 'modules/' . $this->module->name . '/views/templates/admin/PiwikAnalytics/' . $tpl_name, $this->context->smarty);
-        else
-            return $this->context->smarty->createTemplate(_PS_MODULE_DIR_ . '/' . $this->module->name . '/views/templates/admin/PiwikAnalytics/' . $tpl_name, $this->context->smarty);
     }
 
 }
