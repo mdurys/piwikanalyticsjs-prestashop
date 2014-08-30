@@ -46,7 +46,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.5';
+        $this->version = '0.6';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
@@ -98,6 +98,8 @@ class piwikanalyticsjs extends Module {
             $languages[$languages_key]['is_default'] = ($languages_value['id_lang'] == (int) Configuration::get('PS_LANG_DEFAULT') ? true : false);
         }
         $helper = new HelperForm();
+        if (_PS_VERSION_ >= '1.5' && _PS_VERSION_ < '1.6') $helper->base_folder = _PS_MODULE_DIR_ . 'piwikanalyticsjs/views/templates/helpers/form/';
+
         $helper->languages = $languages;
         $helper->module = $this;
         $helper->name_controller = $this->name;
@@ -251,7 +253,7 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign('PIWIK_DOMAINS', Tools::getShopDomain());
 
             $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', Configuration::get('PIWIK_COOKIE_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
-            
+
             $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', Configuration::get('PIWIK_SESSION_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
 
             $smarty_ad = array();
@@ -484,7 +486,7 @@ class piwikanalyticsjs extends Module {
     public function hookSearch($params) {
         $this->hookactionSearch($params);
     }
-    
+
     /**
      * hook into admin stats page on prestashop version 1.4
      * @param array $params
