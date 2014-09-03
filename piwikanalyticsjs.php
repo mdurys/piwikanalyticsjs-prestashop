@@ -20,21 +20,8 @@ if (!defined('_PS_VERSION_')) exit;
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-if (_PS_VERSION_ < '1.5') {
-    /* to simplify the module i added the needed helper-form classes from prestashop 1.5 */
-    require dirname(__FILE__) . '/backward_compatibility/helper/Helper.php';
-
-    class Helper extends HelperCore {
-        
-    }
-
-    require dirname(__FILE__) . '/backward_compatibility/helper/HelperForm.php';
-
-    class HelperForm extends HelperFormCore {
-        
-    }
-
-}
+/* Backward compatibility */
+if (_PS_VERSION_ < '1.5') require_once dirname(__FILE__) . '/backward_compatibility/global.php';
 
 /**
  * Description of piwikanalyticsjs
@@ -46,7 +33,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.6';
+        $this->version = '0.6.1';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
