@@ -21,7 +21,13 @@ if (!defined('_PS_VERSION_')) exit;
  */
 
 /* Backward compatibility */
-if (_PS_VERSION_ < '1.5') require_once dirname(__FILE__) . '/backward_compatibility/global.php';
+if (_PS_VERSION_ < '1.5') {
+    if (version_compare(_PS_VERSION_, '1.4.5.1', '<=')) {
+        include _PS_ROOT_DIR_ . '/modules/piwikanalyticsjs/backward_compatibility/global.php';
+    } else {
+        require_once dirname(__FILE__) . '/backward_compatibility/global.php';
+    }
+}
 
 /**
  * Description of piwikanalyticsjs
@@ -30,10 +36,12 @@ if (_PS_VERSION_ < '1.5') require_once dirname(__FILE__) . '/backward_compatibil
  */
 class piwikanalyticsjs extends Module {
 
+    private static $_isOrder = FALSE;
+
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.6.1';
+        $this->version = '0.6.2';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
@@ -54,7 +62,14 @@ class piwikanalyticsjs extends Module {
 
 
         /* Backward compatibility */
-        if (_PS_VERSION_ < '1.5') require dirname(__FILE__) . '/backward_compatibility/backward.php';
+        if (_PS_VERSION_ < '1.5') {
+            if (version_compare(_PS_VERSION_, '1.4.5.1', '<=')) {
+                include _PS_ROOT_DIR_ . '/modules/piwikanalyticsjs/backward_compatibility/backward.php';
+            } else {
+                require dirname(__FILE__) . '/backward_compatibility/backward.php';
+            }
+        }
+        self::$_isOrder = FALSE;
     }
 
     /**
@@ -300,11 +315,16 @@ class piwikanalyticsjs extends Module {
                 ),
             );
             $this->context->smarty->assign('PIWIK_ORDER_DETAILS', $ORDER_DETAILS);
+
+            // avoid double tracking on complete order.
+            self::$_isOrder = TRUE;
             return $this->display(__FILE__, 'views/templates/hook/jstracking.tpl');
         }
     }
 
     public function hookFooter($params) {
+        if (self::$_isOrder) return "";
+
 
         if (_PS_VERSION_ < '1.5') {
             /* get page name the LAME way :) */
@@ -434,7 +454,7 @@ class piwikanalyticsjs extends Module {
         }
 
         if (strtolower($page_name) == "product" && isset($_GET['id_product']) && Validate::isUnsignedInt($_GET['id_product'])) {
-            $product = new ProductCore($_GET['id_product'], false, (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) == 2 ? $_GET['id_lang'] : NULL));
+            $product = new ProductCore($_GET['id_product'], false, (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : NULL));
             if (!Validate::isLoadedObject($product)) return;
             $product_categorys = $this->get_category_names_by_product($product->id, FALSE);
             $smarty_ad = array(
@@ -458,7 +478,7 @@ class piwikanalyticsjs extends Module {
         }
         /* category tracking */
         if (strtolower($page_name) == "category" && isset($_GET['id_category']) && Validate::isUnsignedInt($_GET['id_category'])) {
-            $category = new Category($_GET['id_category'], (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) == 2 ? $_GET['id_lang'] : NULL));
+            $category = new Category($_GET['id_category'], (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : NULL));
             $this->context->smarty->assign(array(
                 'piwik_category' => array('NAME' => $category->name),
             ));

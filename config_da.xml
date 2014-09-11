@@ -2,7 +2,7 @@
 <module>
 	<name>piwikanalyticsjs</name>
 	<displayName><![CDATA[Piwik Web Analytics]]></displayName>
-	<version><![CDATA[0.1]]></version>
+	<version><![CDATA[0.6.2]]></version>
 	<description><![CDATA[Piwik Web Analytics Javascript plugin]]></description>
 	<author><![CDATA[CMJ Scripter]]></author>
 	<tab><![CDATA[analytics_stats]]></tab>
