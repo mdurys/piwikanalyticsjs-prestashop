@@ -1,29 +1,30 @@
 <?php
 
-if (!defined('_PS_VERSION_'))
-    exit;
+if (!defined('_PS_VERSION_')) exit;
 
 class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
-
-    /** @var PKHelper */
-    public $pkHelper = NULL;
 
     public function __construct() {
 
         $context = Context::getContext();
 
 
-        $PIWIK_URL = 'http://'.Configuration::get('PIWIK_HOST');
+        $PIWIK_URL = 'http://' . Configuration::get('PIWIK_HOST');
         $TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
         $SITE_ID = Configuration::get('PIWIK_SITEID');
         $timeout = 5;
 
         /*
          * ?fc=module&module=piwikanalytics&controller=piwik
+         * MULTI Lanugage shop
+         * ?fc=module&module=piwikanalytics&controller=piwik&id_lang=2&isolang=da
          */
 
         // 1) PIWIK.JS PROXY: No _GET parameter, we serve the JS file
-        if (count($_GET) == 3 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc')) {
+        if (
+                (count($_GET) == 3 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc')) ||
+                (count($_GET) == 5 && Tools::getIsset('module') && Tools::getIsset('controller') && Tools::getIsset('fc') && Tools::getIsset('id_lang') && Tools::getIsset('isolang'))
+        ) {
             $modifiedSince = false;
             if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
                 $modifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
@@ -53,7 +54,10 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
             exit;
         }
         // 2) PIWIK.PHP PROXY: GET parameters found, this is a tracking request, we redirect it to Piwik
-        $url = sprintf("%spiwik.php?cip=%s&token_auth=%s&", $PIWIK_URL, @$_SERVER['REMOTE_ADDR'], $TOKEN_AUTH);
+        @ini_set('magic_quotes_runtime', 0);
+
+        $url = sprintf("%spiwik.php?cip=%s&token_auth=%s&", $PIWIK_URL, $this->getVisitIp(), $TOKEN_AUTH);
+
         foreach ($_GET as $key => $value) {
             $url .= $key . '=' . urlencode($value) . '&';
         }
@@ -66,6 +70,21 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
         $ctx = stream_context_create($stream_options);
         echo file_get_contents($url, 0, $ctx);
         exit;
+    }
+
+    private function getVisitIp() {
+        $matchIp = '/^([0-9]{1,3}\.){3}[0-9]{1,3}$/';
+        $ipKeys = array(
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_CLIENT_IP',
+            'HTTP_CF_CONNECTING_IP',
+        );
+        foreach ($ipKeys as $ipKey) {
+            if (isset($_SERVER[$ipKey]) && preg_match($matchIp, $_SERVER[$ipKey])) {
+                return $_SERVER[$ipKey];
+            }
+        }
+        return @$_SERVER['REMOTE_ADDR'];
     }
 
 }
