@@ -48,7 +48,7 @@
         {/if}
         _paq.push(['trackEcommerceOrder',"{$PIWIK_ORDER_DETAILS.order_id}", '{$PIWIK_ORDER_DETAILS.order_total}', '{$PIWIK_ORDER_DETAILS.order_sub_total}', '{$PIWIK_ORDER_DETAILS.order_tax}', '{$PIWIK_ORDER_DETAILS.order_shipping}', '{$PIWIK_ORDER_DETAILS.order_discount}']);
     {/if}
-    {if isset($PIWIK_SITE_SEARCH)}
+    {if isset($PIWIK_SITE_SEARCH) && !isset($PIWIK_PRODUCTS)}
         {$PIWIK_SITE_SEARCH}
     {else}
         {literal}_paq.push(['trackPageView']);{/literal}
