@@ -41,7 +41,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.6.3';
+        $this->version = '0.6.3.1';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
@@ -89,6 +89,7 @@ class piwikanalyticsjs extends Module {
             if (Tools::getIsset('PIWIK_COOKIE_TIMEOUT')) Configuration::updateValue('PIWIK_COOKIE_TIMEOUT', Tools::getValue('PIWIK_COOKIE_TIMEOUT'));
             if (Tools::getIsset('PIWIK_SESSION_TIMEOUT')) Configuration::updateValue('PIWIK_SESSION_TIMEOUT', Tools::getValue('PIWIK_SESSION_TIMEOUT'));
             if (Tools::getIsset('PIWIK_USE_PROXY')) Configuration::updateValue('PIWIK_USE_PROXY', Tools::getValue('PIWIK_USE_PROXY'));
+            if (Tools::getIsset('PIWIK_EXHTML')) Configuration::updateValue('PIWIK_EXHTML', Tools::getValue('PIWIK_EXHTML'), TRUE);
 
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
@@ -177,6 +178,14 @@ class piwikanalyticsjs extends Module {
                     'name' => 'PIWIK_COOKIE_TIMEOUT',
                     'required' => true
                 ),
+                array(
+                    'type' => 'textarea',
+                    'label' => $this->l('Extra HTML'),
+                    'name' => 'PIWIK_EXHTML',
+                    'desc' => $this->l('Som extra HTML code to put after the piwik tracking code, this can be any html of your choice'),
+                    'rows'=>10,
+                    'cols'=>50,
+                ),
             ),
             'submit' => array(
                 'title' => $this->l('Save'),
@@ -188,6 +197,7 @@ class piwikanalyticsjs extends Module {
         $helper->fields_value['PIWIK_SESSION_TIMEOUT'] = Configuration::get('PIWIK_SESSION_TIMEOUT');
         $helper->fields_value['PIWIK_COOKIE_TIMEOUT'] = Configuration::get('PIWIK_COOKIE_TIMEOUT');
         $helper->fields_value['PIWIK_USE_PROXY'] = Configuration::get('PIWIK_USE_PROXY');
+        $helper->fields_value['PIWIK_EXHTML'] = Configuration::get('PIWIK_EXHTML');
 
         return $_html . $helper->generateForm($fields_form);
     }
@@ -257,6 +267,8 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', Configuration::get('PIWIK_COOKIE_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
 
             $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', Configuration::get('PIWIK_SESSION_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
+
+            $this->context->smarty->assign('PIWIK_EXHTML', Configuration::get('PIWIK_EXHTML'));
 
             $smarty_ad = array();
             foreach ($params['objOrder']->getProductsDetail() as $value) {
@@ -352,6 +364,8 @@ class piwikanalyticsjs extends Module {
         $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', Configuration::get('PIWIK_COOKIE_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
 
         $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', Configuration::get('PIWIK_SESSION_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
+
+        $this->context->smarty->assign('PIWIK_EXHTML', Configuration::get('PIWIK_EXHTML'));
 
         /* cart tracking */
         if (!$this->context->cookie->PIWIKTrackCartFooter) {

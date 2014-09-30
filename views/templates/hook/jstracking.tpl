@@ -57,5 +57,6 @@
         (function() {var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0];g.type = "text/javascript";g.defer = true;g.async = true;g.src = {/literal}{if $PIWIK_USE_PROXY eq true}{literal}u{/literal}{else}{literal}u+'piwik.js'{/literal}{/if}{literal};s.parentNode.insertBefore(g, s);})();
     {/literal}
 </script>
-{* let's help get those harvesters and other, comment spammers see http://projecthoneypot.org/ *}
-<a href="http://cmjscripter.net/independence.php" style="display:none;">Most sold products</a>
+{if isset($PIWIK_EXHTML)}
+    {$PIWIK_EXHTML}
+{/if}
