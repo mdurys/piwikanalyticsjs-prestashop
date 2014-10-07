@@ -1,6 +1,7 @@
 <?php
 
-if (!defined('_PS_VERSION_')) exit;
+if (!defined('_PS_VERSION_'))
+    exit;
 
 /*
  * Copyright (C) 2014 Christian Jensen
@@ -41,21 +42,26 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.6.3.1';
+        $this->version = '0.6.5';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
         $this->bootstrap = true;
 
 
-        if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3') parent::__construct($name);
+        if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3')
+            parent::__construct($name);
         /* Prestashop 1.5 and up implements "$context" */
-        if (_PS_VERSION_ >= '1.5') parent::__construct($name, ($context instanceof Context ? $context : NULL));
+        if (_PS_VERSION_ >= '1.5')
+            parent::__construct($name, ($context instanceof Context ? $context : NULL));
 
 
-        if ($this->id && !Configuration::get('PIWIK_TOKEN_AUTH')) $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('PIWIK is not ready to roll you need to configure the auth token');
-        if ($this->id && !Configuration::get('PIWIK_SITEID')) $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You have not yet set your Piwik Site ID');
-        if ($this->id && !Configuration::get('PIWIK_HOST')) $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('PIWIK is not ready to roll you need to configure the Piwik server url');
+        if ($this->id && !Configuration::get('PIWIK_TOKEN_AUTH'))
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('PIWIK is not ready to roll you need to configure the auth token');
+        if ($this->id && !Configuration::get('PIWIK_SITEID'))
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You have not yet set your Piwik Site ID');
+        if ($this->id && !Configuration::get('PIWIK_HOST'))
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('PIWIK is not ready to roll you need to configure the Piwik server url');
 
         $this->description = $this->l('Piwik Web Analytics Javascript plugin');
         $this->confirmUninstall = $this->l('Are you sure you want to delete this plugin ?');
@@ -78,18 +84,32 @@ class piwikanalyticsjs extends Module {
      * @return string
      */
     public function getContent() {
-        if (_PS_VERSION_ < '1.5') global $currentIndex;
+        if (_PS_VERSION_ < '1.5')
+            global $currentIndex;
         $_html = "";
         Configuration::get('PIWIK_HOST');
         Configuration::get('PIWIK_TOKEN_AUTH');
         if (Tools::isSubmit('submitUpdate' . $this->name)) {
-            if (Tools::getIsset('PIWIK_HOST')) Configuration::updateValue('PIWIK_HOST', Tools::getValue('PIWIK_HOST', ''));
-            if (Tools::getIsset('PIWIK_SITEID')) Configuration::updateValue('PIWIK_SITEID', (int) Tools::getValue('PIWIK_SITEID', 0));
-            if (Tools::getIsset('PIWIK_TOKEN_AUTH')) Configuration::updateValue('PIWIK_TOKEN_AUTH', Tools::getValue('PIWIK_TOKEN_AUTH'));
-            if (Tools::getIsset('PIWIK_COOKIE_TIMEOUT')) Configuration::updateValue('PIWIK_COOKIE_TIMEOUT', Tools::getValue('PIWIK_COOKIE_TIMEOUT'));
-            if (Tools::getIsset('PIWIK_SESSION_TIMEOUT')) Configuration::updateValue('PIWIK_SESSION_TIMEOUT', Tools::getValue('PIWIK_SESSION_TIMEOUT'));
-            if (Tools::getIsset('PIWIK_USE_PROXY')) Configuration::updateValue('PIWIK_USE_PROXY', Tools::getValue('PIWIK_USE_PROXY'));
-            if (Tools::getIsset('PIWIK_EXHTML')) Configuration::updateValue('PIWIK_EXHTML', Tools::getValue('PIWIK_EXHTML'), TRUE);
+            if (Tools::getIsset('PIWIK_HOST'))
+                Configuration::updateValue('PIWIK_HOST', Tools::getValue('PIWIK_HOST', ''));
+            if (Tools::getIsset('PIWIK_SITEID'))
+                Configuration::updateValue('PIWIK_SITEID', (int) Tools::getValue('PIWIK_SITEID', 0));
+            if (Tools::getIsset('PIWIK_TOKEN_AUTH'))
+                Configuration::updateValue('PIWIK_TOKEN_AUTH', Tools::getValue('PIWIK_TOKEN_AUTH'));
+            if (Tools::getIsset('PIWIK_COOKIE_TIMEOUT'))
+                Configuration::updateValue('PIWIK_COOKIE_TIMEOUT', Tools::getValue('PIWIK_COOKIE_TIMEOUT'));
+            if (Tools::getIsset('PIWIK_SESSION_TIMEOUT'))
+                Configuration::updateValue('PIWIK_SESSION_TIMEOUT', Tools::getValue('PIWIK_SESSION_TIMEOUT'));
+            if (Tools::getIsset('PIWIK_USE_PROXY'))
+                Configuration::updateValue('PIWIK_USE_PROXY', Tools::getValue('PIWIK_USE_PROXY'));
+            if (Tools::getIsset('PIWIK_EXHTML'))
+                Configuration::updateValue('PIWIK_EXHTML', Tools::getValue('PIWIK_EXHTML'), TRUE);
+            if (Tools::getIsset('PIWIK_COOKIE_DOMAIN'))
+                Configuration::updateValue('PIWIK_COOKIE_DOMAIN', Tools::getValue('PIWIK_COOKIE_DOMAIN'));
+            if (Tools::getIsset('PIWIK_SET_DOMAINS'))
+                Configuration::updateValue('PIWIK_SET_DOMAINS', Tools::getValue('PIWIK_SET_DOMAINS'));
+            if (Tools::getIsset('PIWIK_DNT'))
+                Configuration::updateValue('PIWIK_DNT', Tools::getValue('PIWIK_DNT'));
 
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
@@ -101,7 +121,8 @@ class piwikanalyticsjs extends Module {
             $languages[$languages_key]['is_default'] = ($languages_value['id_lang'] == (int) Configuration::get('PS_LANG_DEFAULT') ? true : false);
         }
         $helper = new HelperForm();
-        if (_PS_VERSION_ >= '1.5' && _PS_VERSION_ < '1.6') $helper->base_folder = _PS_MODULE_DIR_ . 'piwikanalyticsjs/views/templates/helpers/form/';
+        if (_PS_VERSION_ >= '1.5' && _PS_VERSION_ < '1.6')
+            $helper->base_folder = _PS_MODULE_DIR_ . 'piwikanalyticsjs/views/templates/helpers/form/';
 
         $helper->languages = $languages;
         $helper->module = $this;
@@ -109,8 +130,10 @@ class piwikanalyticsjs extends Module {
         $helper->identifier = $this->identifier;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
 
-        if (_PS_VERSION_ < '1.5') $helper->currentIndex = $currentIndex . '&configure=' . $this->name;
-        else $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
+        if (_PS_VERSION_ < '1.5')
+            $helper->currentIndex = $currentIndex . '&configure=' . $this->name;
+        else
+            $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $helper->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->allow_employee_form_lang = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->show_toolbar = true;
@@ -128,7 +151,7 @@ class piwikanalyticsjs extends Module {
                     'type' => 'text',
                     'label' => $this->l('Piwik Host'),
                     'name' => 'PIWIK_HOST',
-                    'desc' => $this->l('Example: www.example.com/piwik/ (without protocol and / at the end!)'),
+                    'desc' => $this->l('Example: www.example.com/piwik/ (without protocol and with / at the end!)'),
                     'hint' => $this->l('The host where your piwik is installed.!'),
                     'required' => true
                 ),
@@ -168,23 +191,58 @@ class piwikanalyticsjs extends Module {
                 ),
                 array(
                     'type' => 'text',
+                    'label' => $this->l('Track visitors across subdomains'),
+                    'name' => 'PIWIK_COOKIE_DOMAIN',
+                    'desc' => $this->l('Example: *.example.com'),
+                    'hint' => $this->l('So if one visitor visits x.example.com and y.example.com, they will be counted as a unique visitor.'),
+                    'required' => false
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Hide known alias URLs'),
+                    'name' => 'PIWIK_SET_DOMAINS',
+                    'desc' => $this->l('In the "Outlinks" report, hide clicks to known alias URLs, Example: *.example.com'),
+                    'hint' => $this->l('So clicks on links to Alias URLs (eg. x.example.com) will not be counted as "Outlink".'),
+                    'required' => false
+                ),
+                array(
+                    'type' => 'switch',
+                    'is_bool' => true, //retro compat 1.5
+                    'label' => $this->l('Enable client side DoNotTrack detection'),
+                    'name' => 'PIWIK_DNT',
+                    'desc' => $this->l('So tracking requests will not be sent if visitors do not wish to be tracked.'),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
+                ),
+                array(
+                    'type' => 'text',
                     'label' => $this->l('Piwik Session Cookie timeout'),
                     'name' => 'PIWIK_SESSION_TIMEOUT',
-                    'required' => true
+                    'required' => false
                 ),
                 array(
                     'type' => 'text',
                     'label' => $this->l('Piwik Cookie timeout'),
                     'name' => 'PIWIK_COOKIE_TIMEOUT',
-                    'required' => true
+                    'required' => false
                 ),
                 array(
                     'type' => 'textarea',
                     'label' => $this->l('Extra HTML'),
                     'name' => 'PIWIK_EXHTML',
                     'desc' => $this->l('Som extra HTML code to put after the piwik tracking code, this can be any html of your choice'),
-                    'rows'=>10,
-                    'cols'=>50,
+                    'rows' => 10,
+                    'cols' => 50,
                 ),
             ),
             'submit' => array(
@@ -198,7 +256,10 @@ class piwikanalyticsjs extends Module {
         $helper->fields_value['PIWIK_COOKIE_TIMEOUT'] = Configuration::get('PIWIK_COOKIE_TIMEOUT');
         $helper->fields_value['PIWIK_USE_PROXY'] = Configuration::get('PIWIK_USE_PROXY');
         $helper->fields_value['PIWIK_EXHTML'] = Configuration::get('PIWIK_EXHTML');
-
+        $helper->fields_value['PIWIK_COOKIE_DOMAIN'] = Configuration::get('PIWIK_COOKIE_DOMAIN');
+        $helper->fields_value['PIWIK_SET_DOMAINS'] = Configuration::get('PIWIK_SET_DOMAINS');
+        $helper->fields_value['PIWIK_DNT'] = Configuration::get('PIWIK_DNT');
+        
         return $_html . $helper->generateForm($fields_form);
     }
 
@@ -230,7 +291,7 @@ class piwikanalyticsjs extends Module {
         // $param['expr'] is not the searched word if lets say search is Snitmøntre then the $param['expr'] will be Snitmontre
         $expr = Tools::getIsset('search_query') ? htmlentities(Tools::getValue('search_query')) : $param['expr'];
         $this->context->smarty->assign(array(
-            'PIWIK_SITE_SEARCH' => "_paq.push(['trackSiteSearch',\"{$expr}{$page}\",'false',{$param['total']}]);"
+            'PIWIK_SITE_SEARCH' => "_paq.push(['trackSiteSearch',\"{$expr}{$page}\",false,{$param['total']}]);"
         ));
     }
 
@@ -240,7 +301,8 @@ class piwikanalyticsjs extends Module {
      * @param mixed $params
      */
     public function hookHeader($params) {
-        if (!$this->isRegisteredInHook('footer')) $this->registerHook('footer');
+        if (!$this->isRegisteredInHook('footer'))
+            $this->registerHook('footer');
     }
 
     public function hookOrderConfirmation($params) {
@@ -248,27 +310,11 @@ class piwikanalyticsjs extends Module {
         $order = $params['objOrder'];
         if (Validate::isLoadedObject($order)) {
 
-            $this->context->smarty->assign('PIWIK_USE_PROXY', (bool) Configuration::get('PIWIK_USE_PROXY'));
-
-            //* using proxy script?
-            if ((bool) Configuration::get('PIWIK_USE_PROXY')) $this->context->smarty->assign('PIWIK_HOST', $this->getModuleLink('piwikanalyticsjs', 'piwik'));
-            else $this->context->smarty->assign('PIWIK_HOST', Configuration::get('PIWIK_HOST'));
-
-            $this->context->smarty->assign('PIWIK_SITEID', Configuration::get('PIWIK_SITEID'));
+            $this->__setConfigDefault();
 
             $this->context->smarty->assign('PIWIK_ORDER', TRUE);
-
             $this->context->smarty->assign('PIWIK_CART', FALSE);
 
-            $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', '*.' . str_replace('www.', '', Tools::getShopDomain()));
-
-            $this->context->smarty->assign('PIWIK_DOMAINS', Tools::getShopDomain());
-
-            $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', Configuration::get('PIWIK_COOKIE_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
-
-            $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', Configuration::get('PIWIK_SESSION_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
-
-            $this->context->smarty->assign('PIWIK_EXHTML', Configuration::get('PIWIK_EXHTML'));
 
             $smarty_ad = array();
             foreach ($params['objOrder']->getProductsDetail() as $value) {
@@ -286,9 +332,12 @@ class piwikanalyticsjs extends Module {
                 );
             }
             $this->context->smarty->assign('PIWIK_ORDER_PRODUCTS', $smarty_ad);
-            if (isset($params['objOrder']->total_paid_tax_incl) && isset($params['objOrder']->total_paid_tax_excl)) $tax = $params['objOrder']->total_paid_tax_incl - $params['objOrder']->total_paid_tax_excl;
-            else if (isset($params['objOrder']->total_products_wt) && isset($params['objOrder']->total_products)) $tax = $params['objOrder']->total_products_wt - $params['objOrder']->total_products;
-            else $tax = 0.00;
+            if (isset($params['objOrder']->total_paid_tax_incl) && isset($params['objOrder']->total_paid_tax_excl))
+                $tax = $params['objOrder']->total_paid_tax_incl - $params['objOrder']->total_paid_tax_excl;
+            else if (isset($params['objOrder']->total_products_wt) && isset($params['objOrder']->total_products))
+                $tax = $params['objOrder']->total_products_wt - $params['objOrder']->total_products;
+            else
+                $tax = 0.00;
             $ORDER_DETAILS = array(
                 'order_id' => $params['objOrder']->id,
                 'order_total' => $this->currencyConvertion(
@@ -335,7 +384,8 @@ class piwikanalyticsjs extends Module {
     }
 
     public function hookFooter($params) {
-        if (self::$_isOrder) return "";
+        if (self::$_isOrder)
+            return "";
 
 
         if (_PS_VERSION_ < '1.5') {
@@ -344,28 +394,11 @@ class piwikanalyticsjs extends Module {
                 $page_name = $this->context->smarty->get_template_vars('page_name');
             } else if (method_exists($this->context->smarty, 'getTemplateVars')) {/* smarty */
                 $page_name = $this->context->smarty->getTemplateVars('page_name');
-            } else $page_name = "";
+            } else
+                $page_name = "";
         }
-
-        $this->context->smarty->assign('PIWIK_USE_PROXY', (bool) Configuration::get('PIWIK_USE_PROXY'));
-
-        //* using proxy script?
-        if ((bool) Configuration::get('PIWIK_USE_PROXY')) $this->context->smarty->assign('PIWIK_HOST', $this->getModuleLink('piwikanalyticsjs', 'piwik'));
-        else $this->context->smarty->assign('PIWIK_HOST', Configuration::get('PIWIK_HOST'));
-
-        $this->context->smarty->assign('PIWIK_SITEID', Configuration::get('PIWIK_SITEID'));
-
+        $this->__setConfigDefault();
         $this->context->smarty->assign('PIWIK_ORDER', FALSE);
-
-        $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', '*.' . str_replace('www.', '', Tools::getShopDomain()));
-
-        $this->context->smarty->assign('PIWIK_DOMAINS', Tools::getShopDomain());
-
-        $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', Configuration::get('PIWIK_COOKIE_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
-
-        $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', Configuration::get('PIWIK_SESSION_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
-
-        $this->context->smarty->assign('PIWIK_EXHTML', Configuration::get('PIWIK_EXHTML'));
 
         /* cart tracking */
         if (!$this->context->cookie->PIWIKTrackCartFooter) {
@@ -402,8 +435,10 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign('PIWIK_CART', FALSE);
         }
 
-        if (_PS_VERSION_ < '1.5') $this->_hookFooterPS14($params, $page_name);
-        else if (_PS_VERSION_ >= '1.5') $this->_hookFooter($params);
+        if (_PS_VERSION_ < '1.5')
+            $this->_hookFooterPS14($params, $page_name);
+        else if (_PS_VERSION_ >= '1.5')
+            $this->_hookFooter($params);
 
         return $this->display(__FILE__, 'views/templates/hook/jstracking.tpl');
     }
@@ -421,8 +456,10 @@ class piwikanalyticsjs extends Module {
             if (isset($products) && isset($products[0]['product'])) {
                 $smarty_ad = array();
                 foreach ($products as $product) {
-                    if (!Validate::isLoadedObject($product['product'])) continue;
-                    if ($product['categorys'] == NULL) $product['categorys'] = $this->get_category_names_by_product($product['product']->id, FALSE);
+                    if (!Validate::isLoadedObject($product['product']))
+                        continue;
+                    if ($product['categorys'] == NULL)
+                        $product['categorys'] = $this->get_category_names_by_product($product['product']->id, FALSE);
                     $smarty_ad[] = array(
                         /* (required) SKU: Product unique identifier */
                         'SKU' => $product['product']->id . (!empty($product['product']->reference) ? "#" . $product['product']->reference : ""),
@@ -469,7 +506,8 @@ class piwikanalyticsjs extends Module {
 
         if (strtolower($page_name) == "product" && isset($_GET['id_product']) && Validate::isUnsignedInt($_GET['id_product'])) {
             $product = new ProductCore($_GET['id_product'], false, (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : NULL));
-            if (!Validate::isLoadedObject($product)) return;
+            if (!Validate::isLoadedObject($product))
+                return;
             $product_categorys = $this->get_category_names_by_product($product->id, FALSE);
             $smarty_ad = array(
                 array(
@@ -594,8 +632,10 @@ class piwikanalyticsjs extends Module {
     private function get_category_names_by_product($id, $array = true) {
         $_categories = ProductCore::getProductCategoriesFull($id, $this->context->cookie->id_lang);
         if (!is_array($_categories)) {
-            if ($array) return array();
-            else return "[]";
+            if ($array)
+                return array();
+            else
+                return "[]";
         }
 
         if ($array) {
@@ -622,8 +662,42 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public static function getModuleLink($module, $controller = 'default') {
-        if (_PS_VERSION_ < '1.5') return Tools::getShopDomainSsl(true, true) . _MODULE_DIR_ . $module . '/' . $controller . '.php';
-        else return Context::getContext()->link->getModuleLink($module, $controller);
+        if (_PS_VERSION_ < '1.5')
+            return Tools::getShopDomainSsl(true, true) . _MODULE_DIR_ . $module . '/' . $controller . '.php';
+        else
+            return Context::getContext()->link->getModuleLink($module, $controller);
+    }
+
+    private function __setConfigDefault() {
+
+
+        $this->context->smarty->assign('PIWIK_USE_PROXY', (bool) Configuration::get('PIWIK_USE_PROXY'));
+
+        //* using proxy script?
+        if ((bool) Configuration::get('PIWIK_USE_PROXY'))
+            $this->context->smarty->assign('PIWIK_HOST', $this->getModuleLink('piwikanalyticsjs', 'piwik'));
+        else
+            $this->context->smarty->assign('PIWIK_HOST', Configuration::get('PIWIK_HOST'));
+
+        $this->context->smarty->assign('PIWIK_SITEID', Configuration::get('PIWIK_SITEID'));
+
+        $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', Configuration::get('PIWIK_COOKIE_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
+
+        $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', Configuration::get('PIWIK_SESSION_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
+
+        $this->context->smarty->assign('PIWIK_EXHTML', Configuration::get('PIWIK_EXHTML'));
+
+        //$this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', '*.' . str_replace('www.', '', Tools::getShopDomain()));
+        $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
+        $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', (!empty($PIWIK_COOKIE_DOMAIN) && is_string($PIWIK_COOKIE_DOMAIN) ? $PIWIK_COOKIE_DOMAIN : FALSE));
+
+        //$this->context->smarty->assign('PIWIK_DOMAINS', Tools::getShopDomain());
+        $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
+        $this->context->smarty->assign('PIWIK_SET_DOMAINS', (!empty($PIWIK_SET_DOMAINS) && is_string($PIWIK_SET_DOMAINS) ? $PIWIK_SET_DOMAINS : FALSE));
+
+        if ((bool) Configuration::get('PIWIK_DNT')) {
+            $this->context->smarty->assign('PIWIK_DNT', "_paq.push([\"setDoNotTrack\", true]);");
+        }
     }
 
     /* INSTALL / UNINSTALL */
@@ -655,7 +729,8 @@ class piwikanalyticsjs extends Module {
             $tab->class_name = 'PiwikAnalytics';
             $AdminParentStats = Tab::getInstanceFromClassName('AdminParentStats');
             $tab->id_parent = ($AdminParentStats instanceof Tab ? $AdminParentStats->id : -1);
-            if ($tab->add()) Configuration::updateValue('PIWIK_TAPID', (int) $tab->id);
+            if ($tab->add())
+                Configuration::updateValue('PIWIK_TAPID', (int) $tab->id);
         }
 
         /* default values */

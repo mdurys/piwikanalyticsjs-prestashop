@@ -5,7 +5,7 @@
             {literal}var u=(("https:" == document.location.protocol) ? "https://{/literal}{$PIWIK_HOST}{literal}" : "http://{/literal}{$PIWIK_HOST}{literal}");{/literal}
         {/if}{literal}
         var _paq = _paq || [];
-        
+        {/literal}{if isset($PIWIK_DNT)}{$PIWIK_DNT}{/if}{literal}
         _paq.push(["setSiteId", {/literal}{$PIWIK_SITEID}{literal}]);
         {/literal}
         {if $PIWIK_USE_PROXY eq true}
@@ -13,9 +13,16 @@
         {else}
             {literal}_paq.push(["setTrackerUrl", u+'piwik.php']);{/literal}
         {/if}
+        {if isset($PIWIK_COOKIE_DOMAIN) && $PIWIK_COOKIE_DOMAIN eq true}
         {literal}
         _paq.push(["setCookieDomain", "{/literal}{$PIWIK_COOKIE_DOMAIN}{literal}"]);
-        _paq.push(['setDomains', "{/literal}{$PIWIK_DOMAINS}{literal}"]);
+        {/literal}
+        {/if}
+        {if isset($PIWIK_SET_DOMAINS) && $PIWIK_SET_DOMAINS eq true}
+        {literal}
+        _paq.push(['setDomains', "{/literal}{$PIWIK_SET_DOMAINS}{literal}"]);
+        {/literal}
+        {/if}{literal}
         _paq.push(['setVisitorCookieTimeout', '{/literal}{$PIWIK_COOKIE_TIMEOUT}{literal}']);
         _paq.push(['setSessionCookieTimeout', '{/literal}{$PIWIK_SESSION_TIMEOUT}{literal}']);
         _paq.push(['enableLinkTracking']);
