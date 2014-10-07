@@ -110,6 +110,8 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue('PIWIK_SET_DOMAINS', Tools::getValue('PIWIK_SET_DOMAINS'));
             if (Tools::getIsset('PIWIK_DNT'))
                 Configuration::updateValue('PIWIK_DNT', Tools::getValue('PIWIK_DNT'));
+            if (Tools::getIsset('PIWIK_PROXY_SCRIPT'))
+                Configuration::updateValue('PIWIK_PROXY_SCRIPT', str_replace("http://", '', Tools::getValue('PIWIK_PROXY_SCRIPT')));
 
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
@@ -160,7 +162,7 @@ class piwikanalyticsjs extends Module {
                     'is_bool' => true, //retro compat 1.5
                     'label' => $this->l('Use proxy script'),
                     'name' => 'PIWIK_USE_PROXY',
-                    'desc' => sprintf($this->l('Whether or not to use the proxy (%s) insted of Piwik Host'), self::getModuleLink($this->name, 'piwik')),
+                    'desc' => $this->l('Whether or not to use the proxy insted of Piwik Host'),
                     'values' => array(
                         array(
                             'id' => 'active_on',
@@ -173,6 +175,14 @@ class piwikanalyticsjs extends Module {
                             'label' => $this->l('Disabled')
                         )
                     ),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Proxy script'),
+                    'name' => 'PIWIK_PROXY_SCRIPT',
+                    'desc' => $this->l('Example: www.example.com/pkproxy.php'),
+                    'hint' => sprintf($this->l('the FULL path to proxy script to use, build-in: [%s]'), self::getModuleLink($this->name, 'piwik')),
+                    'required' => false
                 ),
                 array(
                     'type' => 'text',
@@ -256,10 +266,14 @@ class piwikanalyticsjs extends Module {
         $helper->fields_value['PIWIK_COOKIE_TIMEOUT'] = Configuration::get('PIWIK_COOKIE_TIMEOUT');
         $helper->fields_value['PIWIK_USE_PROXY'] = Configuration::get('PIWIK_USE_PROXY');
         $helper->fields_value['PIWIK_EXHTML'] = Configuration::get('PIWIK_EXHTML');
-        $helper->fields_value['PIWIK_COOKIE_DOMAIN'] = Configuration::get('PIWIK_COOKIE_DOMAIN');
-        $helper->fields_value['PIWIK_SET_DOMAINS'] = Configuration::get('PIWIK_SET_DOMAINS');
+        $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
+        $helper->fields_value['PIWIK_COOKIE_DOMAIN'] = (!empty($PIWIK_COOKIE_DOMAIN) ? $PIWIK_COOKIE_DOMAIN :'*.' . str_replace('www.', '', Tools::getShopDomain()));
+        $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
+        $helper->fields_value['PIWIK_SET_DOMAINS'] = (!empty($PIWIK_SET_DOMAINS) ? $PIWIK_SET_DOMAINS :Tools::getShopDomain());
         $helper->fields_value['PIWIK_DNT'] = Configuration::get('PIWIK_DNT');
-        
+        $PIWIK_PROXY_SCRIPT = Configuration::get('PIWIK_PROXY_SCRIPT');
+        $helper->fields_value['PIWIK_PROXY_SCRIPT'] = empty($PIWIK_PROXY_SCRIPT) ? str_replace("http://", '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT;
+
         return $_html . $helper->generateForm($fields_form);
     }
 
@@ -675,7 +689,7 @@ class piwikanalyticsjs extends Module {
 
         //* using proxy script?
         if ((bool) Configuration::get('PIWIK_USE_PROXY'))
-            $this->context->smarty->assign('PIWIK_HOST', $this->getModuleLink('piwikanalyticsjs', 'piwik'));
+            $this->context->smarty->assign('PIWIK_HOST', Configuration::get('PIWIK_PROXY_SCRIPT'));
         else
             $this->context->smarty->assign('PIWIK_HOST', Configuration::get('PIWIK_HOST'));
 

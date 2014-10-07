@@ -1,9 +1,5 @@
 <script type="text/javascript">
-        {if $PIWIK_USE_PROXY eq true}
-            {literal}var u= "{/literal}{$PIWIK_HOST}{literal}";{/literal}
-        {else}
-            {literal}var u=(("https:" == document.location.protocol) ? "https://{/literal}{$PIWIK_HOST}{literal}" : "http://{/literal}{$PIWIK_HOST}{literal}");{/literal}
-        {/if}{literal}
+        {literal}var u=(("https:" == document.location.protocol) ? "https://{/literal}{$PIWIK_HOST}{literal}" : "http://{/literal}{$PIWIK_HOST}{literal}");
         var _paq = _paq || [];
         {/literal}{if isset($PIWIK_DNT)}{$PIWIK_DNT}{/if}{literal}
         _paq.push(["setSiteId", {/literal}{$PIWIK_SITEID}{literal}]);
