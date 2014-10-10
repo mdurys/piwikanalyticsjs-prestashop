@@ -27,7 +27,7 @@ class PiwikAnalyticsController extends ModuleAdminController {
         $this->initTabModuleList();
         $this->addToolBarModulesListButton();
         $this->toolbar_title = $this->l('Stats', 'PiwikAnalytics');
-        
+
         if (_PS_VERSION_ < '1.6')
             $this->bootstrap = false;
         else
@@ -49,7 +49,8 @@ class PiwikAnalyticsController extends ModuleAdminController {
 </script>   
 EOF;
             $this->content .= ''
-                    . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" src="http://'
+                    . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
+                    . 'src="' . ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://')
                     . Configuration::get('PIWIK_HOST') . 'index.php'
                     . '?module=Widgetize'
                     . '&action=iframe'

@@ -1,6 +1,7 @@
 <?php
 
-if (!defined('_PS_VERSION_')) exit;
+if (!defined('_PS_VERSION_'))
+    exit;
 
 class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
 
@@ -9,7 +10,7 @@ class PiwikAnalyticsJSPiwikModuleFrontController extends ModuleFrontController {
         $context = Context::getContext();
 
 
-        $PIWIK_URL = 'http://' . Configuration::get('PIWIK_HOST');
+        $PIWIK_URL = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://') . Configuration::get('PIWIK_HOST');
         $TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
         $SITE_ID = Configuration::get('PIWIK_SITEID');
         $timeout = 5;

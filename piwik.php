@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Piwik - free/libre analytics platform
  * Piwik Proxy Hide URL
@@ -6,7 +7,6 @@
  * @link http://piwik.org/faq/how-to/#faq_132
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
-
 // -----
 // Important: read the instructions in README.md or at:
 // https://github.com/piwik/piwik/tree/master/misc/proxy-hide-piwik-url#piwik-proxy-hide-url
@@ -17,7 +17,7 @@ require '../../config/config.inc.php';
 // Edit the line below, and replace http://your-piwik-domain.example.org/piwik/
 // with your Piwik URL ending with a slash.
 // This URL will never be revealed to visitors or search engines.
-$PIWIK_URL = 'http://'.Configuration::get('PIWIK_HOST');
+$PIWIK_URL = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://') . Configuration::get('PIWIK_HOST');
 
 // Edit the line below, and replace xyz by the token_auth for the user "UserTrackingAPI"
 // which you created when you followed instructions above.
@@ -69,24 +69,22 @@ foreach ($_GET as $key => $value) {
 }
 header("Content-Type: image/gif");
 $stream_options = array('http' => array(
-    'user_agent' => @$_SERVER['HTTP_USER_AGENT'],
-    'header'     => sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $_SERVER['HTTP_ACCEPT_LANGUAGE'])),
-    'timeout'    => $timeout
-));
+        'user_agent' => @$_SERVER['HTTP_USER_AGENT'],
+        'header' => sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $_SERVER['HTTP_ACCEPT_LANGUAGE'])),
+        'timeout' => $timeout
+        ));
 $ctx = stream_context_create($stream_options);
 echo file_get_contents($url, 0, $ctx);
 
-function getVisitIp()
-{
+function getVisitIp() {
     $matchIp = '/^([0-9]{1,3}\.){3}[0-9]{1,3}$/';
     $ipKeys = array(
         'HTTP_X_FORWARDED_FOR',
         'HTTP_CLIENT_IP',
         'HTTP_CF_CONNECTING_IP',
     );
-    foreach($ipKeys as $ipKey) {
-        if (isset($_SERVER[$ipKey])
-            && preg_match($matchIp, $_SERVER[$ipKey])) {
+    foreach ($ipKeys as $ipKey) {
+        if (isset($_SERVER[$ipKey]) && preg_match($matchIp, $_SERVER[$ipKey])) {
             return $_SERVER[$ipKey];
         }
     }

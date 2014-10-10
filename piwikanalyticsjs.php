@@ -87,34 +87,8 @@ class piwikanalyticsjs extends Module {
         if (_PS_VERSION_ < '1.5')
             global $currentIndex;
         $_html = "";
-        Configuration::get('PIWIK_HOST');
-        Configuration::get('PIWIK_TOKEN_AUTH');
-        if (Tools::isSubmit('submitUpdate' . $this->name)) {
-            if (Tools::getIsset('PIWIK_HOST'))
-                Configuration::updateValue('PIWIK_HOST', Tools::getValue('PIWIK_HOST', ''));
-            if (Tools::getIsset('PIWIK_SITEID'))
-                Configuration::updateValue('PIWIK_SITEID', (int) Tools::getValue('PIWIK_SITEID', 0));
-            if (Tools::getIsset('PIWIK_TOKEN_AUTH'))
-                Configuration::updateValue('PIWIK_TOKEN_AUTH', Tools::getValue('PIWIK_TOKEN_AUTH'));
-            if (Tools::getIsset('PIWIK_COOKIE_TIMEOUT'))
-                Configuration::updateValue('PIWIK_COOKIE_TIMEOUT', Tools::getValue('PIWIK_COOKIE_TIMEOUT'));
-            if (Tools::getIsset('PIWIK_SESSION_TIMEOUT'))
-                Configuration::updateValue('PIWIK_SESSION_TIMEOUT', Tools::getValue('PIWIK_SESSION_TIMEOUT'));
-            if (Tools::getIsset('PIWIK_USE_PROXY'))
-                Configuration::updateValue('PIWIK_USE_PROXY', Tools::getValue('PIWIK_USE_PROXY'));
-            if (Tools::getIsset('PIWIK_EXHTML'))
-                Configuration::updateValue('PIWIK_EXHTML', Tools::getValue('PIWIK_EXHTML'), TRUE);
-            if (Tools::getIsset('PIWIK_COOKIE_DOMAIN'))
-                Configuration::updateValue('PIWIK_COOKIE_DOMAIN', Tools::getValue('PIWIK_COOKIE_DOMAIN'));
-            if (Tools::getIsset('PIWIK_SET_DOMAINS'))
-                Configuration::updateValue('PIWIK_SET_DOMAINS', Tools::getValue('PIWIK_SET_DOMAINS'));
-            if (Tools::getIsset('PIWIK_DNT'))
-                Configuration::updateValue('PIWIK_DNT', Tools::getValue('PIWIK_DNT'));
-            if (Tools::getIsset('PIWIK_PROXY_SCRIPT'))
-                Configuration::updateValue('PIWIK_PROXY_SCRIPT', str_replace("http://", '', Tools::getValue('PIWIK_PROXY_SCRIPT')));
+        $_html .= $this->processFormsUpdate();
 
-            $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
-        }
         $fields_form = array();
 
         $languages = Language::getLanguages(FALSE);
@@ -259,6 +233,42 @@ class piwikanalyticsjs extends Module {
                 'title' => $this->l('Save'),
             )
         );
+
+        $fields_form[1]['form'] = array(
+            'legend' => array(
+                'title' => $this->displayName . ' ' . $this->l('Advanced'),
+                'image' => (_PS_VERSION_ < '1.5' ? $this->_path . 'logo.gif' : $this->_path . 'logo.png')
+            ),
+            'input' => array(
+                array(
+                    'type' => 'html',
+                    'html_content' => $this->l('In this section you can modify certain aspects of the way this plugin sends products, searches, category view etc.. to piwik')
+                ),
+                array(
+                    'type' => 'switch',
+                    'is_bool' => true, //retro compat 1.5
+                    'label' => $this->l('Use HTTPS'),
+                    'name' => 'PIWIK_CRHTTPS',
+                    'hint' => $this->l('ONLY enable this feature if your piwik installation is accessible via https'),
+                    'desc' => $this->l('use Hypertext Transfer Protocol Secure (HTTPS) in all requests from code to piwik, this only affects how requests are sent from proxy script to piwik, your visitors will still use the protocol they visit your shop with'),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
+                ),
+            ),
+            'submit' => array(
+                'title' => $this->l('Save'),
+            )
+        );
         $helper->fields_value['PIWIK_HOST'] = Configuration::get('PIWIK_HOST');
         $helper->fields_value['PIWIK_SITEID'] = Configuration::get('PIWIK_SITEID');
         $helper->fields_value['PIWIK_TOKEN_AUTH'] = Configuration::get('PIWIK_TOKEN_AUTH');
@@ -266,15 +276,51 @@ class piwikanalyticsjs extends Module {
         $helper->fields_value['PIWIK_COOKIE_TIMEOUT'] = Configuration::get('PIWIK_COOKIE_TIMEOUT');
         $helper->fields_value['PIWIK_USE_PROXY'] = Configuration::get('PIWIK_USE_PROXY');
         $helper->fields_value['PIWIK_EXHTML'] = Configuration::get('PIWIK_EXHTML');
+        $helper->fields_value['PIWIK_CRHTTPS'] = Configuration::get('PIWIK_CRHTTPS');
         $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
-        $helper->fields_value['PIWIK_COOKIE_DOMAIN'] = (!empty($PIWIK_COOKIE_DOMAIN) ? $PIWIK_COOKIE_DOMAIN :'*.' . str_replace('www.', '', Tools::getShopDomain()));
+        $helper->fields_value['PIWIK_COOKIE_DOMAIN'] = (!empty($PIWIK_COOKIE_DOMAIN) ? $PIWIK_COOKIE_DOMAIN : '*.' . str_replace('www.', '', Tools::getShopDomain()));
         $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
-        $helper->fields_value['PIWIK_SET_DOMAINS'] = (!empty($PIWIK_SET_DOMAINS) ? $PIWIK_SET_DOMAINS :Tools::getShopDomain());
+        $helper->fields_value['PIWIK_SET_DOMAINS'] = (!empty($PIWIK_SET_DOMAINS) ? $PIWIK_SET_DOMAINS : Tools::getShopDomain());
         $helper->fields_value['PIWIK_DNT'] = Configuration::get('PIWIK_DNT');
         $PIWIK_PROXY_SCRIPT = Configuration::get('PIWIK_PROXY_SCRIPT');
-        $helper->fields_value['PIWIK_PROXY_SCRIPT'] = empty($PIWIK_PROXY_SCRIPT) ? str_replace("http://", '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT;
+        $helper->fields_value['PIWIK_PROXY_SCRIPT'] = empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT;
 
         return $_html . $helper->generateForm($fields_form);
+    }
+
+    private function processFormsUpdate() {
+
+        $_html = "";
+        if (Tools::isSubmit('submitUpdate' . $this->name)) {
+            if (Tools::getIsset('PIWIK_HOST'))
+                Configuration::updateValue('PIWIK_HOST', Tools::getValue('PIWIK_HOST', ''));
+            if (Tools::getIsset('PIWIK_SITEID'))
+                Configuration::updateValue('PIWIK_SITEID', (int) Tools::getValue('PIWIK_SITEID', 0));
+            if (Tools::getIsset('PIWIK_TOKEN_AUTH'))
+                Configuration::updateValue('PIWIK_TOKEN_AUTH', Tools::getValue('PIWIK_TOKEN_AUTH'));
+            if (Tools::getIsset('PIWIK_COOKIE_TIMEOUT'))
+                Configuration::updateValue('PIWIK_COOKIE_TIMEOUT', Tools::getValue('PIWIK_COOKIE_TIMEOUT'));
+            if (Tools::getIsset('PIWIK_SESSION_TIMEOUT'))
+                Configuration::updateValue('PIWIK_SESSION_TIMEOUT', Tools::getValue('PIWIK_SESSION_TIMEOUT'));
+            if (Tools::getIsset('PIWIK_USE_PROXY'))
+                Configuration::updateValue('PIWIK_USE_PROXY', Tools::getValue('PIWIK_USE_PROXY'));
+            if (Tools::getIsset('PIWIK_EXHTML'))
+                Configuration::updateValue('PIWIK_EXHTML', Tools::getValue('PIWIK_EXHTML'), TRUE);
+            if (Tools::getIsset('PIWIK_COOKIE_DOMAIN'))
+                Configuration::updateValue('PIWIK_COOKIE_DOMAIN', Tools::getValue('PIWIK_COOKIE_DOMAIN'));
+            if (Tools::getIsset('PIWIK_SET_DOMAINS'))
+                Configuration::updateValue('PIWIK_SET_DOMAINS', Tools::getValue('PIWIK_SET_DOMAINS'));
+            if (Tools::getIsset('PIWIK_DNT'))
+                Configuration::updateValue('PIWIK_DNT', Tools::getValue('PIWIK_DNT', 0));
+            if (Tools::getIsset('PIWIK_PROXY_SCRIPT'))
+                Configuration::updateValue('PIWIK_PROXY_SCRIPT', str_replace(array("http://", "https://"), '', Tools::getValue('PIWIK_PROXY_SCRIPT')));
+            if (Tools::getIsset('PIWIK_CRHTTPS'))
+                Configuration::updateValue('PIWIK_CRHTTPS', Tools::getValue('PIWIK_CRHTTPS', 0));
+
+            $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
+        }
+
+        return $_html;
     }
 
     /* HOOKs */
@@ -311,7 +357,7 @@ class piwikanalyticsjs extends Module {
 
     /**
      * only checks that the module is registered in hook "footer", 
-     * this why we only appen javescript to the end of the page!
+     * this why we only appent javescript to the end of the page!
      * @param mixed $params
      */
     public function hookHeader($params) {
@@ -571,7 +617,8 @@ class piwikanalyticsjs extends Module {
         $html = '<script type="text/javascript">function WidgetizeiframeDashboardLoaded() {var w = $(\'#content\').width();var h = $(\'body\').height();$(\'#WidgetizeiframeDashboard\').width(\'100%\');$(\'#WidgetizeiframeDashboard\').height(h);}</script>'
                 . '<fieldset class="width3">'
                 . '<legend><img src="../modules/' . $this->name . '/logo.gif" /> ' . $this->displayName . '</legend>'
-                . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" src="http://'
+                . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
+                . 'src="' . ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://')
                 . Configuration::get('PIWIK_HOST') . 'index.php'
                 . '?module=Widgetize'
                 . '&action=iframe'
@@ -683,7 +730,6 @@ class piwikanalyticsjs extends Module {
     }
 
     private function __setConfigDefault() {
-
 
         $this->context->smarty->assign('PIWIK_USE_PROXY', (bool) Configuration::get('PIWIK_USE_PROXY'));
 
