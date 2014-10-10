@@ -435,7 +435,7 @@ class piwikanalyticsjs extends Module {
                     'PRICE' => $this->currencyConvertion(
                             array(
                                 'price' => Tools::ps_round(( isset($value['total_price_tax_incl']) ? floatval($value['total_price_tax_incl']) : (isset($value['total_price_tax_incl']) ? floatval($value['total_price_tax_incl']) : 0.00)), 2),
-                                'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : false),
+                                'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                             )
                     ),
                     'QUANTITY' => $value['product_quantity'],
@@ -453,25 +453,25 @@ class piwikanalyticsjs extends Module {
                 'order_total' => $this->currencyConvertion(
                         array(
                             'price' => Tools::ps_round(floatval(isset($params['objOrder']->total_paid_tax_incl) ? $params['objOrder']->total_paid_tax_incl : (isset($params['objOrder']->total_paid) ? $params['objOrder']->total_paid : 0.00)), 2),
-                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : false),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                         )
                 ),
                 'order_sub_total' => $this->currencyConvertion(
                         array(
                             'price' => Tools::ps_round(floatval($params['objOrder']->total_products_wt), 2),
-                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : false),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                         )
                 ),
                 'order_tax' => $this->currencyConvertion(
                         array(
                             'price' => Tools::ps_round(floatval($tax), 2),
-                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : false),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                         )
                 ),
                 'order_shipping' => $this->currencyConvertion(
                         array(
                             'price' => Tools::ps_round(floatval((isset($params['objOrder']->total_shipping_tax_incl) ? $params['objOrder']->total_shipping_tax_incl : (isset($params['objOrder']->total_shipping) ? $params['objOrder']->total_shipping : 0.00))), 2),
-                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : false),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                         )
                 ),
                 'order_discount' => $this->currencyConvertion(
@@ -481,7 +481,7 @@ class piwikanalyticsjs extends Module {
                                             Tools::ps_round(floatval($params['objOrder']->total_discounts_tax_incl), 2) : false) : (isset($params['objOrder']->total_discounts) ?
                                             ($params['objOrder']->total_discounts > 0 ?
                                                     Tools::ps_round(floatval($params['objOrder']->total_discounts), 2) : false) : 0.00)),
-                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : false),
+                            'conversion_rate' => (isset($params['objOrder']->conversion_rate) ? $params['objOrder']->conversion_rate : 0.00),
                         )
                 ),
             );
@@ -517,6 +517,8 @@ class piwikanalyticsjs extends Module {
         if (strtotime($this->context->cart->date_upd) >= $this->context->cookie->PIWIKTrackCartFooter) {
             $this->context->cookie->PIWIKTrackCartFooter = strtotime($this->context->cart->date_upd) + 2;
             $smarty_ad = array();
+
+            $Currency = new Currency($this->context->cart->id_currency);
             foreach ($this->context->cart->getProducts() as $key => $value) {
                 if (!isset($value['id_product']) || !isset($value['name']) || !isset($value['total_wt']) || !isset($value['quantity'])) {
                     continue;
@@ -528,7 +530,7 @@ class piwikanalyticsjs extends Module {
                     'PRICE' => $this->currencyConvertion(
                             array(
                                 'price' => Tools::ps_round($value['total_wt'], 2),
-                                'conversion_rate' => false,
+                                'conversion_rate' => $Currency->conversion_rate,
                             )
                     ),
                     'QUANTITY' => $value['quantity'],
@@ -537,7 +539,12 @@ class piwikanalyticsjs extends Module {
             if (count($smarty_ad) > 0) {
                 $this->context->smarty->assign('PIWIK_CART', TRUE);
                 $this->context->smarty->assign('PIWIK_CART_PRODUCTS', $smarty_ad);
-                $this->context->smarty->assign('PIWIK_CART_TOTAL', $this->context->cart->getOrderTotal());
+                $this->context->smarty->assign('PIWIK_CART_TOTAL', $this->currencyConvertion(
+                                array(
+                                    'price' => $this->context->cart->getOrderTotal(),
+                                    'conversion_rate' => $Currency->conversion_rate,
+                                )
+                ));
             } else {
                 $this->context->smarty->assign('PIWIK_CART', FALSE);
             }
@@ -581,8 +588,8 @@ class piwikanalyticsjs extends Module {
                         /* (optional) Product Price as displayed on the page */
                         'PRICE' => $this->currencyConvertion(
                                 array(
-                                    'price' => Tools::ps_round(Product::getPriceStatic($product['product']->id, true), 2),
-                                    'conversion_rate' => false,
+                                    'price' => Tools::ps_round(Product::getPriceStatic($product['product']->id, true, false), 2),
+                                    'conversion_rate' => $this->context->currency->conversion_rate,
                                 )
                         ),
                     );
@@ -617,14 +624,14 @@ class piwikanalyticsjs extends Module {
         }
 
         if (strtolower($page_name) == "product" && isset($_GET['id_product']) && Validate::isUnsignedInt($_GET['id_product'])) {
-            $product = new ProductCore($_GET['id_product'], false, (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : NULL));
+            $product = new Product($_GET['id_product'], false, (isset($_GET['id_lang']) && Validate::isUnsignedInt($_GET['id_lang']) ? $_GET['id_lang'] : NULL));
             if (!Validate::isLoadedObject($product))
                 return;
             $product_categorys = $this->get_category_names_by_product($product->id, FALSE);
             $smarty_ad = array(
                 array(
                     /* (required) SKU: Product unique identifier */
-                    'SKU' => $this->parseProductSku($product['product']->id, FALSE, (isset($product['product']->reference) ? $product['product']->reference : FALSE)),
+                    'SKU' => $this->parseProductSku($product->id, FALSE, (isset($product->reference) ? $product->reference : FALSE)),
                     /* (optional) Product name */
                     'NAME' => $product->name,
                     /* (optional) Product category, or array of up to 5 categories */
@@ -632,7 +639,7 @@ class piwikanalyticsjs extends Module {
                     /* (optional) Product Price as displayed on the page */
                     'PRICE' => $this->currencyConvertion(
                             array(
-                                'price' => Tools::ps_round(Product::getPriceStatic($product->id, true), 2),
+                                'price' => Tools::ps_round(Product::getPriceStatic($product->id, true, false), 2),
                                 'conversion_rate' => false,
                             )
                     ),
@@ -749,6 +756,18 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     private function currencyConvertion($params) {
+        /*
+         * current way is not a good start 
+         * the convertion is off by a few cents!!?
+         * any input is very much appreciated
+         */
+//        if ($params['conversion_rate'] === FALSE || $params['conversion_rate'] == 0.0) {
+//            //* shop default
+//            return Tools::convertPrice((float) $params['price'], Currency::getCurrencyInstance((int) (Currency::getIdByIsoCode('EUR'))));
+//        } else {
+//            $_shop_price = (float) ((float) $params['price'] / (float) $params['conversion_rate']);
+//            return Tools::convertPrice($_shop_price, Currency::getCurrencyInstance((int) (Currency::getIdByIsoCode('EUR'))));
+//        }
         return (float) $params['price'];
     }
 
@@ -759,7 +778,7 @@ class piwikanalyticsjs extends Module {
      * @return string|array
      */
     private function get_category_names_by_product($id, $array = true) {
-        $_categories = ProductCore::getProductCategoriesFull($id, $this->context->cookie->id_lang);
+        $_categories = Product::getProductCategoriesFull($id, $this->context->cookie->id_lang);
         if (!is_array($_categories)) {
             if ($array)
                 return array();
