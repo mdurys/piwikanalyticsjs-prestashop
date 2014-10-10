@@ -226,7 +226,7 @@
 											{if isset($fields_value[$id_checkbox]) && $fields_value[$id_checkbox]}checked="checked"{/if} />
 										<label for="{$id_checkbox}" class="t"><strong>{$value[$input.values.name]}</strong></label><br />
 									{/foreach}
-                                                                        {elseif $input.type == 'switch'}
+                                                                {elseif $input.type == 'switch'}
 		{foreach $input.values as $value}
 			<input type="radio" name="{$input.name}" id="{$value.id}" value="{$value.value|escape:'html':'UTF-8'}"
 					{if $fields_value[$input.name] == $value.value}checked="checked"{/if}
@@ -245,6 +245,13 @@
 			{if isset($input.br) && $input.br}<br />{/if}
 			{if isset($value.p) && $value.p}<p>{$value.p}</p>{/if}
 		{/foreach}
+                                                                        
+								{elseif $input.type == 'html'}
+									{if isset($input.html_content)}
+										{$input.html_content}
+									{else}
+										{$input.name}
+									{/if}
 								{/if}
 								{if isset($input.required) && $input.required && $input.type != 'radio'} <sup>*</sup>{/if}
 								{/block}{* end block input *}

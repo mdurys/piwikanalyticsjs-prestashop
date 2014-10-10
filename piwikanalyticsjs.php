@@ -154,8 +154,8 @@ class piwikanalyticsjs extends Module {
                     'type' => 'text',
                     'label' => $this->l('Proxy script'),
                     'name' => 'PIWIK_PROXY_SCRIPT',
-                    'desc' => $this->l('Example: www.example.com/pkproxy.php'),
-                    'hint' => sprintf($this->l('the FULL path to proxy script to use, build-in: [%s]'), self::getModuleLink($this->name, 'piwik')),
+                    'hint' => $this->l('Example: www.example.com/pkproxy.php'),
+                    'desc' => sprintf($this->l('the FULL path to proxy script to use, build-in: [%s]'), self::getModuleLink($this->name, 'piwik')),
                     'required' => false
                 ),
                 array(
@@ -224,7 +224,7 @@ class piwikanalyticsjs extends Module {
                     'type' => 'textarea',
                     'label' => $this->l('Extra HTML'),
                     'name' => 'PIWIK_EXHTML',
-                    'desc' => $this->l('Som extra HTML code to put after the piwik tracking code, this can be any html of your choice'),
+                    'desc' => $this->l('Some extra HTML code to put after the piwik tracking code, this can be any html of your choice'),
                     'rows' => 10,
                     'cols' => 50,
                 ),
@@ -264,6 +264,41 @@ class piwikanalyticsjs extends Module {
                         )
                     ),
                 ),
+                array(
+                    'type' => 'html',
+                    'html_content' => $this->l('in the next few inputs you can set how the product id is passed on to piwik')
+                    . '<br />'
+                    . $this->l('there are three variables you can use:')
+                    . '<br />'
+                    . $this->l('{ID} : this variable is replaced with id the product has in prestashop')
+                    . '<br />'
+                    . $this->l('{REFERENCE} : this variable is replaced with the unique reference you when adding adding/updating a product, this variable is only available in prestashop 1.5 and up')
+                    . '<br />'
+                    . $this->l('{ATTRID} : this variable is replaced with id the product attribute')
+                    . '<br />'
+                    . $this->l('in cases where only the product id is available it be parsed as ID and nothing else'),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Product id V1'),
+                    'name' => 'PIWIK_PRODID_V1',
+                    'desc' => $this->l('This template is used in case ALL three values are available ("Product ID", "Product Attribute ID" and "Product Reference")'),
+                    'required' => false
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Product id V2'),
+                    'name' => 'PIWIK_PRODID_V2',
+                    'desc' => $this->l('This template is used in case only "Product ID" and "Product Reference" are available'),
+                    'required' => false
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Product id V3'),
+                    'name' => 'PIWIK_PRODID_V3',
+                    'desc' => $this->l('This template is used in case only "Product ID" and "Product Attribute ID" are available'),
+                    'required' => false
+                ),
             ),
             'submit' => array(
                 'title' => $this->l('Save'),
@@ -277,6 +312,14 @@ class piwikanalyticsjs extends Module {
         $helper->fields_value['PIWIK_USE_PROXY'] = Configuration::get('PIWIK_USE_PROXY');
         $helper->fields_value['PIWIK_EXHTML'] = Configuration::get('PIWIK_EXHTML');
         $helper->fields_value['PIWIK_CRHTTPS'] = Configuration::get('PIWIK_CRHTTPS');
+
+        $PIWIK_PRODID_V1 = Configuration::get('PIWIK_PRODID_V1');
+        $helper->fields_value['PIWIK_PRODID_V1'] = (!empty($PIWIK_PRODID_V1) ? $PIWIK_PRODID_V1 : '{ID}-{ATTRID}#{REFERENCE}');
+        $PIWIK_PRODID_V2 = Configuration::get('PIWIK_PRODID_V2');
+        $helper->fields_value['PIWIK_PRODID_V2'] = (!empty($PIWIK_PRODID_V2) ? $PIWIK_PRODID_V2 : '{ID}#{REFERENCE}');
+        $PIWIK_PRODID_V3 = Configuration::get('PIWIK_PRODID_V3');
+        $helper->fields_value['PIWIK_PRODID_V3'] = (!empty($PIWIK_PRODID_V3) ? $PIWIK_PRODID_V3 : '{ID}-{ATTRID}');
+
         $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
         $helper->fields_value['PIWIK_COOKIE_DOMAIN'] = (!empty($PIWIK_COOKIE_DOMAIN) ? $PIWIK_COOKIE_DOMAIN : '*.' . str_replace('www.', '', Tools::getShopDomain()));
         $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
@@ -316,6 +359,12 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue('PIWIK_PROXY_SCRIPT', str_replace(array("http://", "https://"), '', Tools::getValue('PIWIK_PROXY_SCRIPT')));
             if (Tools::getIsset('PIWIK_CRHTTPS'))
                 Configuration::updateValue('PIWIK_CRHTTPS', Tools::getValue('PIWIK_CRHTTPS', 0));
+            if (Tools::getIsset('PIWIK_PRODID_V1'))
+                Configuration::updateValue('PIWIK_PRODID_V1', Tools::getValue('PIWIK_PRODID_V1', '{ID}-{ATTRID}#{REFERENCE}'));
+            if (Tools::getIsset('PIWIK_PRODID_V2'))
+                Configuration::updateValue('PIWIK_PRODID_V2', Tools::getValue('PIWIK_PRODID_V2', '{ID}#{REFERENCE}'));
+            if (Tools::getIsset('PIWIK_PRODID_V3'))
+                Configuration::updateValue('PIWIK_PRODID_V3', Tools::getValue('PIWIK_PRODID_V3', '{ID}#{ATTRID}'));
 
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
@@ -378,8 +427,9 @@ class piwikanalyticsjs extends Module {
 
             $smarty_ad = array();
             foreach ($params['objOrder']->getProductsDetail() as $value) {
+                die(print_r($product, true));
                 $smarty_ad[] = array(
-                    'SKU' => $value['product_id'] . (isset($value['product_reference']) ? '#' . $value['product_reference'] : (isset($value['product_attribute_id']) ? '#' . $value['product_attribute_id'] : '')),
+                    'SKU' => $this->parseProductSku($value['product_id'], (isset($value['product_attribute_id']) ? $value['product_attribute_id'] : FALSE), (isset($value['product_reference']) ? $value['product_reference'] : FALSE)),
                     'NAME' => $value['product_name'],
                     'CATEGORY' => $this->get_category_names_by_product($value['product_id'], FALSE),
                     'PRICE' => $this->currencyConvertion(
@@ -472,12 +522,13 @@ class piwikanalyticsjs extends Module {
                     continue;
                 }
                 $smarty_ad[] = array(
-                    'SKU' => $value['id_product'],
+                    'SKU' => $this->parseProductSku($value['id_product'], (isset($value['id_product_attribute']) && $value['id_product_attribute'] > 0 ? $value['id_product_attribute'] : FALSE), (isset($value['reference']) ? $value['reference'] : FALSE)),
                     'NAME' => $value['name'] . (isset($value['attributes']) ? ' (' . $value['attributes'] . ')' : ''),
                     'CATEGORY' => $this->get_category_names_by_product($value['id_product'], FALSE),
                     'PRICE' => $this->currencyConvertion(
                             array(
                                 'price' => Tools::ps_round($value['total_wt'], 2),
+                                'conversion_rate' => false,
                             )
                     ),
                     'QUANTITY' => $value['quantity'],
@@ -522,7 +573,7 @@ class piwikanalyticsjs extends Module {
                         $product['categorys'] = $this->get_category_names_by_product($product['product']->id, FALSE);
                     $smarty_ad[] = array(
                         /* (required) SKU: Product unique identifier */
-                        'SKU' => $product['product']->id . (!empty($product['product']->reference) ? "#" . $product['product']->reference : ""),
+                        'SKU' => $this->parseProductSku($product['product']->id, FALSE, (isset($product['product']->reference) ? $product['product']->reference : FALSE)),
                         /* (optional) Product name */
                         'NAME' => $product['product']->name,
                         /* (optional) Product category, or array of up to 5 categories */
@@ -531,6 +582,7 @@ class piwikanalyticsjs extends Module {
                         'PRICE' => $this->currencyConvertion(
                                 array(
                                     'price' => Tools::ps_round(Product::getPriceStatic($product['product']->id, true), 2),
+                                    'conversion_rate' => false,
                                 )
                         ),
                     );
@@ -572,7 +624,7 @@ class piwikanalyticsjs extends Module {
             $smarty_ad = array(
                 array(
                     /* (required) SKU: Product unique identifier */
-                    'SKU' => $product->id . (!empty($product->reference) ? "#" . $product->reference : ""),
+                    'SKU' => $this->parseProductSku($product['product']->id, FALSE, (isset($product['product']->reference) ? $product['product']->reference : FALSE)),
                     /* (optional) Product name */
                     'NAME' => $product->name,
                     /* (optional) Product category, or array of up to 5 categories */
@@ -581,6 +633,7 @@ class piwikanalyticsjs extends Module {
                     'PRICE' => $this->currencyConvertion(
                             array(
                                 'price' => Tools::ps_round(Product::getPriceStatic($product->id, true), 2),
+                                'conversion_rate' => false,
                             )
                     ),
                 )
@@ -673,6 +726,21 @@ class piwikanalyticsjs extends Module {
     }
 
     /* HELPERS */
+
+    private function parseProductSku($id, $attrid = FALSE, $ref = FALSE) {
+        if (Validate::isInt($id) && (!empty($attrid) && !is_null($attrid) && $attrid !== FALSE) && (!empty($ref) && !is_null($ref) && $ref !== FALSE)) {
+            $PIWIK_PRODID_V1 = Configuration::get('PIWIK_PRODID_V1');
+            return str_replace(array('{ID}', '{ATTRID}', '{REFERENCE}'), array($id, $attrid, $ref), $PIWIK_PRODID_V1);
+        } elseif (Validate::isInt($id) && (!empty($ref) && !is_null($ref) && $ref !== FALSE)) {
+            $PIWIK_PRODID_V2 = Configuration::get('PIWIK_PRODID_V2');
+            return str_replace(array('{ID}', '{REFERENCE}'), array($id, $ref), $PIWIK_PRODID_V2);
+        } elseif (Validate::isInt($id) && (!empty($attrid) && !is_null($attrid) && $attrid !== FALSE)) {
+            $PIWIK_PRODID_V3 = Configuration::get('PIWIK_PRODID_V3');
+            return str_replace(array('{ID}', '{ATTRID}'), array($id, $attrid), $PIWIK_PRODID_V3);
+        } else {
+            return $id;
+        }
+    }
 
     /**
      * convert into default currentcy used in piwik
