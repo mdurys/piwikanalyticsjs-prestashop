@@ -48,6 +48,7 @@ class PiwikAnalyticsController extends ModuleAdminController {
   }
 </script>   
 EOF;
+            $lng = new LanguageCore($this->context->cookie->id_lang);
             $this->content .= ''
                     . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
                     . 'src="' . ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://')
@@ -59,6 +60,7 @@ EOF;
                     . '&idSite=' . (int) Configuration::get('PIWIK_SITEID')
                     . '&period=day'
                     . '&token_auth=' . Configuration::get('PIWIK_TOKEN_AUTH')
+                    . '&language=' . $lng->iso_code
                     . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
         }
         $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop');
