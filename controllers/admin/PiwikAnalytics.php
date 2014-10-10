@@ -60,7 +60,7 @@ EOF;
                     . '&token_auth=' . Configuration::get('PIWIK_TOKEN_AUTH')
                     . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
         }
-        $this->context->smarty->assign('help_link', 'http://cmjscripter.net/public/2014/01/24/piwik-traking-prestashop/?_ps=' . Tools::getShopDomainSsl());
+        $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop');
 
         $this->context->smarty->assign(array(
             'content' => $this->content,
