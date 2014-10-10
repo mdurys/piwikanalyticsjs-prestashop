@@ -845,6 +845,16 @@ class piwikanalyticsjs extends Module {
         if ((bool) Configuration::get('PIWIK_DNT')) {
             $this->context->smarty->assign('PIWIK_DNT', "_paq.push([\"setDoNotTrack\", true]);");
         }
+
+        if (_PS_VERSION_ < '1.5') {
+            if ($this->context->cookie->isLogged()) {
+                $this->context->smarty->assign('PIWIK_UUID', $this->context->cookie->id_customer);
+            }
+        } else {
+            if ($this->context->customer->isLogged()) {
+                $this->context->smarty->assign('PIWIK_UUID', $this->context->customer->id);
+            }
+        }
     }
 
     /* INSTALL / UNINSTALL */
