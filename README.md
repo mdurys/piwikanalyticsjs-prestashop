@@ -1,7 +1,9 @@
 [Piwik] module for [PrestaShop]
 =========
 
-[Piwik] Web Analytics aims to be the ultimate open source alternative to Google Analytics.
+[Piwik] Web Analytics is (my opinion) the ultimate open source alternative to Google Analytics. And it is continuously growing, it's every thing you need to analyze the traffic on your website or ecommerce solution (and it's free)
+
+[PrestaShop] is an easy to use, **free** e-commerce solution that provides everything you need to open, operate and maintain an online store.
 
 This module adds piwik tracking code to your webshop
   - Page views
@@ -24,6 +26,10 @@ to install the module from [PrestaShop] modules page without using ftp you need 
 
 read more view images see the following link
 http://cmjnisse.github.io/piwikanalyticsjs-prestashop
+
+Bugs, New features
+--------------
+are and can only be fixed if they are reported, feel free use the issue system here at GitHub in case you don't like to use Github you are also welcome to report them by mail to "piwikanalyticsjs [AT] cmjscripter.net" (Text Only), note that if your mail gets flagged as spam i will not receive them
 
 License
 ----
