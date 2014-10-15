@@ -28,11 +28,22 @@ http://cmjnisse.github.io/piwikanalyticsjs-prestashop
 License
 ----
 
-GPL version 3
+GNU General Public License version 3
 
-the header of the code currently says GPL version 2, but it will be updated soon
+PiwikAnalyticsJS for prestashop is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-**Free Software, Hell Yeah!**
+PiwikAnalyticsJS for prestashop is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/licenses/>.
+
+**Learn to love Free Software**
 
 [PrestaShop]:http://prestashop.com/
 [Piwik]:http://piwik.org/
