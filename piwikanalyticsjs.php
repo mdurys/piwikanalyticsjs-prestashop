@@ -26,6 +26,7 @@ if (!defined('_PS_VERSION_'))
  * @license http://www.gnu.org/licenses/gpl-3.0.html GPL v3 or later
  */
 
+
 /* Backward compatibility */
 if (_PS_VERSION_ < '1.5') {
     if (version_compare(_PS_VERSION_, '1.4.5.1', '<=')) {
@@ -47,7 +48,7 @@ class piwikanalyticsjs extends Module {
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
-        $this->version = '0.6.6';
+        $this->version = '0.6.6.1';
         $this->author = 'CMJ Scripter';
         $this->displayName = 'Piwik Web Analytics';
 
@@ -432,7 +433,6 @@ class piwikanalyticsjs extends Module {
 
             $smarty_ad = array();
             foreach ($params['objOrder']->getProductsDetail() as $value) {
-                die(print_r($product, true));
                 $smarty_ad[] = array(
                     'SKU' => $this->parseProductSku($value['product_id'], (isset($value['product_attribute_id']) ? $value['product_attribute_id'] : FALSE), (isset($value['product_reference']) ? $value['product_reference'] : FALSE)),
                     'NAME' => $value['product_name'],
