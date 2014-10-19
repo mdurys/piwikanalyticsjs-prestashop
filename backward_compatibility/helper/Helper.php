@@ -143,12 +143,12 @@ if (!in_array('HelperCore', get_declared_classes())) {
          */
         public function renderCategoryTree($root = null, $selected_cat = array(), $input_name = 'categoryBox', $use_radio = false, $use_search = false, $disabled_categories = array(), $use_in_popup = false, $use_shop_context = false) {
             $translations = array(
-                'selected' => $this->l('Selected'),
-                'Collapse All' => $this->l('Collapse All'),
-                'Expand All' => $this->l('Expand All'),
-                'Check All' => $this->l('Check All'),
-                'Uncheck All' => $this->l('Uncheck All'),
-                'search' => $this->l('Find a category')
+                'selected' => $this->Translate('Selected'),
+                'Collapse All' => $this->Translate('Collapse All'),
+                'Expand All' => $this->Translate('Expand All'),
+                'Check All' => $this->Translate('Check All'),
+                'Uncheck All' => $this->Translate('Uncheck All'),
+                'search' => $this->Translate('Find a category')
             );
 
             $top_category = Category::getTopCategory();
@@ -245,7 +245,7 @@ if (!in_array('HelperCore', get_declared_classes())) {
          * @param boolean $htmlentities if set to true(default), the return value will pass through htmlentities($string, ENT_QUOTES, 'utf-8')
          * @return string the translation if available, or the english default text.
          */
-        protected function l($string, $class = 'AdminTab', $addslashes = false, $htmlentities = true) {
+        protected function Translate($string, $class = 'AdminTab', $addslashes = false, $htmlentities = true) {
             // if the class is extended by a module, use modules/[module_name]/xx.php lang file
             $currentClass = get_class($this);
             if (Module::getModuleNameFromClass($currentClass)) return Translate::getModuleTranslation(Module::$classInModule[$currentClass], $string, $currentClass);
