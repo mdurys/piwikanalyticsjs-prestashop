@@ -248,7 +248,7 @@ class piwikanalyticsjs extends Module {
             'input' => array(
                 array(
                     'type' => 'html',
-                    'html_content' => $this->l('In this section you can modify certain aspects of the way this plugin sends products, searches, category view etc.. to piwik')
+                    'name' => $this->l('In this section you can modify certain aspects of the way this plugin sends products, searches, category view etc.. to piwik')
                 ),
                 array(
                     'type' => 'switch',
@@ -272,7 +272,7 @@ class piwikanalyticsjs extends Module {
                 ),
                 array(
                     'type' => 'html',
-                    'html_content' => $this->l('in the next few inputs you can set how the product id is passed on to piwik')
+                    'name' => $this->l('in the next few inputs you can set how the product id is passed on to piwik')
                     . '<br />'
                     . $this->l('there are three variables you can use:')
                     . '<br />'
