@@ -61,7 +61,17 @@ class PiwikAnalyticsController extends ModuleAdminController {
             if ($this->className)
                 $this->loadObject(true);
 
-            $this->content .= <<< EOF
+
+            $PIWIK_HOST = Configuration::get('PIWIK_HOST');
+            $PIWIK_SITEID = (int) Configuration::get('PIWIK_SITEID');
+            $PIWIK_TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
+            if ((empty($PIWIK_HOST) || $PIWIK_HOST === FALSE) ||
+                    ($PIWIK_SITEID <= 0 || $PIWIK_SITEID === FALSE) ||
+                    (empty($PIWIK_TOKEN_AUTH) || $PIWIK_TOKEN_AUTH === FALSE)) {
+
+                $this->content .= "<h3 style=\"padding: 90px;\">{$this->l("You need to set 'Piwik host url', 'Piwik token auth' and 'Piwik site id', and save them before the dashboard can be shown here")}</h3>";
+            } else {
+                $this->content .= <<< EOF
 <script type="text/javascript">
   function WidgetizeiframeDashboardLoaded() {
       var w = $('#content').width();
@@ -71,20 +81,21 @@ class PiwikAnalyticsController extends ModuleAdminController {
   }
 </script>   
 EOF;
-            $lng = new LanguageCore($this->context->cookie->id_lang);
-            $this->content .= ''
-                    . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
-                    . 'src="' . ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://')
-                    . Configuration::get('PIWIK_HOST') . 'index.php'
-                    . '?module=Widgetize'
-                    . '&action=iframe'
-                    . '&moduleToWidgetize=Dashboard'
-                    . '&actionToWidgetize=index'
-                    . '&idSite=' . (int) Configuration::get('PIWIK_SITEID')
-                    . '&period=day'
-                    . '&token_auth=' . Configuration::get('PIWIK_TOKEN_AUTH')
-                    . '&language=' . $lng->iso_code
-                    . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
+                $lng = new LanguageCore($this->context->cookie->id_lang);
+                $this->content .= ''
+                        . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
+                        . 'src="' . ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://')
+                        . $PIWIK_HOST . 'index.php'
+                        . '?module=Widgetize'
+                        . '&action=iframe'
+                        . '&moduleToWidgetize=Dashboard'
+                        . '&actionToWidgetize=index'
+                        . '&idSite=' . $PIWIK_SITEID
+                        . '&period=day'
+                        . '&token_auth=' . $PIWIK_TOKEN_AUTH
+                        . '&language=' . $lng->iso_code
+                        . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
+            }
         }
         $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop');
 

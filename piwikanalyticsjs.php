@@ -77,13 +77,13 @@ class piwikanalyticsjs extends Module {
         if (_PS_VERSION_ >= '1.5')
             parent::__construct($name, ($context instanceof Context ? $context : NULL));
 
-
+        //* warnings on module list page
         if ($this->id && !Configuration::get('PIWIK_TOKEN_AUTH'))
-            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('PIWIK is not ready to roll you need to configure the auth token');
-        if ($this->id && !Configuration::get('PIWIK_SITEID'))
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the auth token');
+        if ($this->id && ((int) Configuration::get('PIWIK_SITEID') <= 0))
             $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('You have not yet set your Piwik Site ID');
         if ($this->id && !Configuration::get('PIWIK_HOST'))
-            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('PIWIK is not ready to roll you need to configure the Piwik server url');
+            $this->warning = (isset($this->warning) && !empty($this->warning) ? $this->warning . ',<br/> ' : '') . $this->l('is not ready to roll you need to configure the Piwik server url');
 
         $this->description = $this->l('Piwik Web Analytics Javascript plugin');
         $this->confirmUninstall = $this->l('Are you sure you want to delete this plugin ?');
@@ -111,6 +111,15 @@ class piwikanalyticsjs extends Module {
             global $currentIndex;
         $_html = "";
         $_html .= $this->processFormsUpdate();
+
+
+        //* warnings on module configure page
+        if ($this->id && !Configuration::get('PIWIK_TOKEN_AUTH') && !Tools::getIsset('PIWIK_TOKEN_AUTH')) /* avoid the same error message twice */
+            $this->_errors .= $this->displayError($this->l('Piwik auth token is empty'));
+        if ($this->id && ((int) Configuration::get('PIWIK_SITEID') <= 0) && !Tools::getIsset('PIWIK_SITEID')) /* avoid the same error message twice */
+            $this->_errors .= $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
+        if ($this->id && !Configuration::get('PIWIK_HOST'))
+            $this->_errors .= $this->displayError($this->l('Piwik host cannot be empty'));
 
         $fields_form = array();
 
@@ -531,6 +540,8 @@ class piwikanalyticsjs extends Module {
      * @return string
      */
     public function hookdisplayRightColumnProduct($param) {
+        if ((int) Configuration::get('PIWIK_SITEID') <= 0)
+            return "";
         if ((int) Tools::getValue('content_only') > 0 && get_class($this->context->controller) == 'ProductController') { // we also do this in the tpl file.!
             return $this->hookFooter($param);
         }
@@ -541,6 +552,8 @@ class piwikanalyticsjs extends Module {
      * @param array $param
      */
     public function hookactionSearch($param) {
+        if ((int) Configuration::get('PIWIK_SITEID') <= 0)
+            return "";
         $param['total'] = intval($param['total']);
         /* if multi pages in search add page number of current if set! */
         $page = "";
@@ -565,6 +578,8 @@ class piwikanalyticsjs extends Module {
     }
 
     public function hookOrderConfirmation($params) {
+        if ((int) Configuration::get('PIWIK_SITEID') <= 0)
+            return "";
 
         $order = $params['objOrder'];
         if (Validate::isLoadedObject($order)) {
@@ -643,6 +658,9 @@ class piwikanalyticsjs extends Module {
     }
 
     public function hookFooter($params) {
+        if ((int) Configuration::get('PIWIK_SITEID') <= 0)
+            return "";
+
         if (self::$_isOrder)
             return "";
 
@@ -812,6 +830,8 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public function hookSearch($params) {
+        if ((int) Configuration::get('PIWIK_SITEID') <= 0)
+            return "";
         $this->hookactionSearch($params);
     }
 
@@ -822,21 +842,28 @@ class piwikanalyticsjs extends Module {
      * @since 0.5
      */
     public function hookAdminStatsModules($params) {
+        $PIWIK_HOST = Configuration::get('PIWIK_HOST');
+        $PIWIK_SITEID = (int) Configuration::get('PIWIK_SITEID');
+        $PIWIK_TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
+        if ((empty($PIWIK_HOST) || $PIWIK_HOST === FALSE) ||
+                ($PIWIK_SITEID <= 0 || $PIWIK_SITEID === FALSE) ||
+                (empty($PIWIK_TOKEN_AUTH) || $PIWIK_TOKEN_AUTH === FALSE))
+            return "<h3>{$this->l("You need to set 'Piwik host url', 'Piwik token auth' and 'Piwik site id', and save them before the dashboard can be shown here")}</h3>";
         $lng = new Language($params['cookie']->id_lang);
         $html = '<script type="text/javascript">function WidgetizeiframeDashboardLoaded() {var w = $(\'#content\').width();var h = $(\'body\').height();$(\'#WidgetizeiframeDashboard\').width(\'100%\');$(\'#WidgetizeiframeDashboard\').height(h);}</script>'
                 . '<fieldset class="width3">'
                 . '<legend><img src="../modules/' . $this->name . '/logo.gif" /> ' . $this->displayName . '</legend>'
                 . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
                 . 'src="' . ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://')
-                . Configuration::get('PIWIK_HOST') . 'index.php'
+                . $PIWIK_HOST . 'index.php'
                 . '?module=Widgetize'
                 . '&action=iframe'
                 . '&moduleToWidgetize=Dashboard'
                 . '&actionToWidgetize=index'
-                . '&idSite=' . (int) Configuration::get('PIWIK_SITEID')
+                . '&idSite=' . $PIWIK_SITEID
                 . '&period=day'
                 . '&language=' . $lng->iso_code
-                . '&token_auth=' . Configuration::get('PIWIK_TOKEN_AUTH')
+                . '&token_auth=' . $PIWIK_TOKEN_AUTH
                 . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>'
                 . '</fieldset>';
         return $html;
@@ -858,6 +885,8 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public function hookExtraRight($params) {
+        if ((int) Configuration::get('PIWIK_SITEID') <= 0)
+            return "";
         // $params['cookie'] (OBJECT)
         // $params['cart'] (OBJECT)
         return "";
@@ -872,6 +901,8 @@ class piwikanalyticsjs extends Module {
      * @since 0.4
      */
     public function hookProductfooter($params) {
+        if ((int) Configuration::get('PIWIK_SITEID') <= 0)
+            return "";
         // $params[product] (OBJECT)
         // $params['category'] (OBJECT)
         // $params['cookie'] (OBJECT)
@@ -965,11 +996,17 @@ class piwikanalyticsjs extends Module {
             $categories = array();
             foreach ($_categories as $category) {
                 $categories[] = $category['name'];
+                if (count($categories) == 5)
+                    break;
             }
         } else {
             $categories = '[';
+            $c = 0;
             foreach ($_categories as $category) {
+                $c++;
                 $categories .= '"' . $category['name'] . '",';
+                if ($c == 5)
+                    break;
             }
             $categories = rtrim($categories, ',');
             $categories .= ']';
@@ -1026,7 +1063,6 @@ class piwikanalyticsjs extends Module {
         $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
         $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', (empty($PIWIK_COOKIE_DOMAIN) ? FALSE : $PIWIK_COOKIE_DOMAIN));
 
-        // _paq.push(['setDomains', "['331.xx.yyyyyyy.com','xx.yyyyyyy.com'','tesing.yyyyyyy.dk']"]);
         $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
         if (!empty($PIWIK_SET_DOMAINS)) {
             $sdArr = explode(' ', Configuration::get('PIWIK_SET_DOMAINS'));
@@ -1039,6 +1075,7 @@ class piwikanalyticsjs extends Module {
         }else {
             $this->context->smarty->assign('PIWIK_SET_DOMAINS', FALSE);
         }
+        unset($PIWIK_SET_DOMAINS);
 
         if ((bool) Configuration::get('PIWIK_DNT')) {
             $this->context->smarty->assign('PIWIK_DNT', "_paq.push([\"setDoNotTrack\", true]);");
