@@ -35,7 +35,7 @@
             _paq.push(['setCookieDomain', '{$PIWIK_COOKIE_DOMAIN}']);
         {/if}
         {if isset($PIWIK_SET_DOMAINS) && $PIWIK_SET_DOMAINS eq true}
-        _paq.push(['setDomains', '{$PIWIK_SET_DOMAINS}']);
+        _paq.push(['setDomains', {$PIWIK_SET_DOMAINS}]);
         {/if}
         {if isset($PIWIK_COOKIE_TIMEOUT)}
         _paq.push(['setVisitorCookieTimeout', '{$PIWIK_COOKIE_TIMEOUT}']);

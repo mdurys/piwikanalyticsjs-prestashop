@@ -45,6 +45,9 @@ class piwikanalyticsjs extends Module {
 
     private static $_isOrder = FALSE;
     protected $_errors = "";
+    protected $piwikSite = FALSE;
+    protected $default_currency = array();
+    protected $currencies = array();
 
     /**
      * setReferralCookieTimeout
@@ -99,6 +102,8 @@ class piwikanalyticsjs extends Module {
         }
         self::$_isOrder = FALSE;
         $this->_errors = "";
+
+        require_once dirname(__FILE__) . '/PKHelper.php';
     }
 
     /**
@@ -111,7 +116,9 @@ class piwikanalyticsjs extends Module {
             global $currentIndex;
         $_html = "";
         $_html .= $this->processFormsUpdate();
-
+        $this->piwikSite = PKHelper::getPiwikSite($errors, $this);
+        $this->_errors .= $errors;
+        $this->__setCurrencies();
 
         //* warnings on module configure page
         if ($this->id && !Configuration::get('PIWIK_TOKEN_AUTH') && !Tools::getIsset('PIWIK_TOKEN_AUTH')) /* avoid the same error message twice */
@@ -149,25 +156,17 @@ class piwikanalyticsjs extends Module {
         $helper->title = $this->displayName;
         $helper->submit_action = 'submitUpdate' . $this->name;
 
-        $fields_form[0]['form'] = array(
-            'legend' => array(
-                'title' => $this->displayName,
-                'image' => (_PS_VERSION_ < '1.5' ? $this->_path . 'logo.gif' : $this->_path . 'logo.png')
-            ),
-            'submit' => array(
-                'title' => $this->l('Save'),
-            )
+        $fields_form[0]['form']['legend'] = array(
+            'title' => $this->displayName,
+            'image' => (_PS_VERSION_ < '1.5' ? $this->_path . 'logo.gif' : $this->_path . 'logo.png')
         );
 
-
-        // get piwik site if token and site id is set
-        $piwikSite = $this->getPiwikSite();
-        if ($piwikSite !== FALSE) {
+        if ($this->piwikSite !== FALSE) {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'html',
                 'name' => $this->l('Based on the settings you provided this is the info i get from Piwik!') . "<br>"
-                . "<strong>" . $this->l('Name') . "</strong>: <i>{$piwikSite[0]->name}</i><br>"
-                . "<strong>" . $this->l('Main Url') . "</strong>: <i>{$piwikSite[0]->main_url}</i><br>"
+                . "<strong>" . $this->l('Name') . "</strong>: <i>{$this->piwikSite[0]->name}</i><br>"
+                . "<strong>" . $this->l('Main Url') . "</strong>: <i>{$this->piwikSite[0]->main_url}</i><br>"
             );
         }
 
@@ -264,7 +263,7 @@ class piwikanalyticsjs extends Module {
                 )
             ),
         );
-        $image_tracking = $this->getPiwikImageTrackingCode();
+        $image_tracking = PKHelper::getPiwikImageTrackingCode();
         $fields_form[0]['form']['input'][] = array(
             'type' => 'html',
             'name' => $this->l('Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages') . "<br>"
@@ -280,51 +279,24 @@ class piwikanalyticsjs extends Module {
             'cols' => 50,
         );
 
-        if ($piwikSite !== FALSE) {
-            $default_currency = array('value' => 0, 'label' => $this->l('Choose currency'));
-            $currencies = array();
-            foreach (Currency::getCurrencies() as $key => $val) {
-                $currencies[$key] = array(
-                    'iso_code' => $val['iso_code'],
-                    'name' => "{$val['name']} {$val['iso_code']}",
-                );
-                if (Configuration::get("PIWIK_DEFAULT_CURRENCY") == $val['iso_code'])
-                    $default_currency = array('value' => $val['iso_code'], 'label' => "{$val['name']} {$val['iso_code']}");
-            }
-
+        if ($this->piwikSite !== FALSE) {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'select',
                 'label' => $this->l('Piwik Currency'),
                 'name' => 'PIWIK_DEFAULT_CURRENCY',
-                'desc' => sprintf($this->l('Based on your settings in Piwik your default currency is %s'), $piwikSite[0]->currency),
+                'desc' => sprintf($this->l('Based on your settings in Piwik your default currency is %s'), $this->piwikSite[0]->currency),
                 'options' => array(
-                    'default' => $default_currency,
-                    'query' => $currencies,
+                    'default' => $this->default_currency,
+                    'query' => $this->currencies,
                     'id' => 'iso_code',
                     'name' => 'name'
                 ),
             );
-            /*
-             *  [0] => stdClass Object ( 
-             *      [idsite] => 15
-             *      [name] => Maj-Design Testing
-             *      [main_url] => http://tesing.maj-design.dk
-             *      [ts_created] => 2014-04-26 19:33:17
-             *      [ecommerce] => 1
-             *      [sitesearch] => 1
-             *      [sitesearch_keyword_parameters] => q,query,s,search,searchword,k,keyword
-             *      [sitesearch_category_parameters] =>
-             *      [timezone] => UTC+2
-             *      [currency] => DKK
-             *      [excluded_ips] =>
-             *      [excluded_parameters] =>
-             *      [excluded_user_agents] =>
-             *      [group] =>
-             *      [type] => website
-             *      [keep_url_fragment] => 0
-             *  )
-             */
         }
+        $fields_form[0]['form']['submit'] = array(
+                'title' => $this->l('Save'),
+        );
+
 
 
         $fields_form[1]['form'] = array(
@@ -425,6 +397,232 @@ class piwikanalyticsjs extends Module {
                 'title' => $this->l('Save'),
             )
         );
+
+        if ($this->piwikSite !== FALSE) {
+            $tmp = PKHelper::getMyPiwikSites(TRUE);
+            $pksite_default = array('value' => 0, 'label' => $this->l('Choose Piwik site'));
+            $pksites = array();
+            foreach ($tmp as $pksid) {
+                $pksites[] = array(
+                    'pkid' => $pksid->idsite,
+                    'name' => "{$pksid->name} #{$pksid->idsite}",
+                );
+            }
+            unset($tmp, $pksid);
+
+            $pktimezone_default = array('value' => 0, 'label' => $this->l('Choose Timezone'));
+            $pktimezones = array();
+            $tmp = PKHelper::getTimezonesList();
+            foreach ($tmp as $key => $pktz) {
+                if (!isset($pktimezones[$key])) {
+                    $pktimezones[$key] = array(
+                        'name' => $this->l($key),
+                        'query' => array(),
+                    );
+                }
+                foreach ($pktz as $pktzK => $pktzV) {
+                    $pktimezones[$key]['query'][] = array(
+                        'tzId' => $pktzK,
+                        'tzName' => $pktzV,
+                    );
+                }
+            }
+            unset($tmp, $pktz, $pktzV, $pktzK);
+            $fields_form[2]['form'] = array(
+                'legend' => array(
+                    'title' => $this->displayName . ' ' . $this->l('Advanced') . ' - ' . $this->l('Edit your Piwik site'),
+                    'image' => (_PS_VERSION_ < '1.5' ? $this->_path . 'logo.gif' : $this->_path . 'logo.png')
+                ),
+                'input' => array(
+                    array(
+                        'type' => 'select',
+                        'label' => $this->l('Piwik Site'),
+                        'name' => 'SPKSID',
+                        'desc' => sprintf($this->l('Based on your settings in Piwik your default site is %s'), $this->piwikSite[0]->idsite),
+                        'options' => array(
+                            'default' => $pksite_default,
+                            'query' => $pksites,
+                            'id' => 'pkid',
+                            'name' => 'name'
+                        ),
+                    ),
+                    array(
+                        'type' => 'html',
+                        'name' => $this->l('In this section you can modify your settings in piwik just so you don\'t have to login to Piwik to do this') . "<br>"
+                        . "<strong>" . $this->l('Currently selected name') . "</strong>: <i>{$this->piwikSite[0]->name}</i><br>"
+                        . "<input type=\"hidden\" name=\"PKAdminIdSite\" id=\"PKAdminIdSite\" value=\"{$this->piwikSite[0]->idsite}\" />"
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Piwik Site Name'),
+                        'name' => 'PKAdminSiteName',
+                        'desc' => $this->l('Name of this site in Piwik'),
+                    ),
+//                    array(
+//                        'type' => 'text',
+//                        'label' => $this->l('Site urls'),
+//                        'name' => 'PKAdminSiteUrls',
+//                    ),
+                    array(
+                        'type' => 'switch',
+                        'is_bool' => true,
+                        'label' => $this->l('Ecommerce'),
+                        'name' => 'PKAdminEcommerce',
+                        'desc' => $this->l('Is this site an ecommerce site?'),
+                        'values' => array(
+                            array(
+                                'id' => 'active_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes')
+                            ),
+                            array(
+                                'id' => 'active_off',
+                                'value' => 0,
+                                'label' => $this->l('No')
+                            )
+                        ),
+                    ),
+                    array(
+                        'type' => 'switch',
+                        'is_bool' => true,
+                        'label' => $this->l('Site Search'),
+                        'name' => 'PKAdminSiteSearch',
+                        'values' => array(
+                            array(
+                                'id' => 'active_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes')
+                            ),
+                            array(
+                                'id' => 'active_off',
+                                'value' => 0,
+                                'label' => $this->l('No')
+                            )
+                        ),
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Search Keyword Parameters'),
+                        'name' => 'PKAdminSearchKeywordParameters',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Search Category Parameters'),
+                        'name' => 'PKAdminSearchCategoryParameters',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Excluded ip addresses'),
+                        'name' => 'PKAdminExcludedIps',
+                        'desc' => $this->l('ip addresses excluded from tracking, separated by comma ","'),
+                    ),
+                    array(
+                        'type' => 'text',
+                        'label' => $this->l('Excluded Query Parameters'),
+                        'name' => 'PKAdminExcludedQueryParameters',
+                    ),
+                    array(
+                        'type' => 'select',
+                        'label' => $this->l('Timezone'),
+                        'name' => 'PKAdminTimezone',
+                        'desc' => sprintf($this->l('Based on your settings in Piwik your default timezone is %s'), $this->piwikSite[0]->timezone),
+                        'options' => array(
+                            'default' => $pktimezone_default,
+                            'optiongroup' => array(
+                                'label' => 'name',
+                                'query' => $pktimezones,
+                            ),
+                            'options' => array(
+                                'id' => 'tzId',
+                                'name' => 'tzName',
+                                'query' => 'query',
+                            ),
+                        ),
+                    ),
+                    array(
+                        'type' => 'select',
+                        'label' => $this->l('Currency'),
+                        'name' => 'PKAdminCurrency',
+                        'desc' => sprintf($this->l('Based on your settings in Piwik your default currency is %s'), $this->piwikSite[0]->currency),
+                        'options' => array(
+                            'default' => $this->default_currency,
+                            'query' => $this->currencies,
+                            'id' => 'iso_code',
+                            'name' => 'name'
+                        ),
+                    ),
+//                    array(
+//                        'type' => 'text',
+//                        'label' => $this->l('Website group'),
+//                        'name' => 'PKAdminGroup',
+//                    ),
+//                    array(
+//                        'type' => 'text',
+//                        'label' => $this->l('Website start date'),
+//                        'name' => 'PKAdminStartDate',
+//                    ),
+//                    array(
+//                        'type' => 'textarea',
+//                        'label' => $this->l('Excluded User Agents'),
+//                        'name' => 'PKAdminExcludedUserAgents',
+//                        'rows' => 10,
+//                        'cols' => 50,
+//                    ),
+                    array(
+                        'type' => 'switch',
+                        'is_bool' => true,
+                        'label' => $this->l('Keep URL Fragments'),
+                        'name' => 'PKAdminKeepURLFragments',
+                        'values' => array(
+                            array(
+                                'id' => 'active_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes')
+                            ),
+                            array(
+                                'id' => 'active_off',
+                                'value' => 0,
+                                'label' => $this->l('No')
+                            )
+                        ),
+                    ),
+//                    array(
+//                        'type' => 'text',
+//                        'label' => $this->l('Site Type'),
+//                        'name' => 'PKAdminSiteType',
+//                    ),
+                    /* */
+                    array(
+                        'type' => 'html',
+                        'name' => "<button onclick=\"return submitPiwikSiteAPIUpdate()\" id=\"submitUpdatePiwikAdmSite\" class=\"btn btn-default pull-left\" name=\"submitUpdatePiwikAdmSite\" value=\"1\" type=\"button\"><i class=\"process-icon-save\"></i>" . $this->l('Save') . "</button>"
+                        . "<script type=\"text/javascript\">"
+                        . "function submitPiwikSiteAPIUpdate(){\n"
+                        . "    var idSite = $('#PKAdminIdSite').val();\n"
+                        . "    var siteName = $('#PKAdminSiteName').val();\n"
+                        . "    /*var urls = $('#PKAdminSiteUrls').val();*/\n"
+                        . "    var ecommerce = $('input[name=PKAdminEcommerce]:checked').val();\n"
+                        . "    var siteSearch = $('input[name=PKAdminSiteSearch]:checked').val();\n"
+                        . "    var searchKeywordParameters = $('#PKAdminSearchKeywordParameters').val();\n"
+                        . "    var searchCategoryParameters = $('#PKAdminSearchCategoryParameters').val();\n"
+                        . "    var excludedIps = $('#PKAdminExcludedIps').val();\n"
+                        . "    var excludedQueryParameters = $('#PKAdminExcludedQueryParameters').val();\n"
+                        . "    var timezone = $('#PKAdminTimezone').val();\n"
+                        . "    var currency = $('#PKAdminCurrency').val();\n"
+                        . "    /*var group = $('#PKAdminGroup').val();*/\n"
+                        . "    /*var startDate = $('#PKAdminStartDate').val();*/\n"
+                        . "    /*var excludedUserAgents = $('#PKAdminExcludedUserAgents').val();*/\n"
+                        . "    var keepURLFragments = $('#PKAdminKeepURLFragments').val();\n"
+                        . "    /*var type = $('#PKAdminSiteType').val();*/\n"
+                        . "    \n"
+                        . "    \n"
+                        . "    \n"
+                        . "return false;"
+                        . "}"
+                        . "</script>"
+                    ),
+                ),
+            );
+        }
         $helper->fields_value = $this->getFormFields();
         return $this->_errors . $_html . $helper->generateForm($fields_form);
     }
@@ -439,6 +637,7 @@ class piwikanalyticsjs extends Module {
         $PIWIK_SESSION_TIMEOUT = (int) Configuration::get('PIWIK_SESSION_TIMEOUT');
         return array(
             'PIWIK_HOST' => Configuration::get('PIWIK_HOST'),
+            'SPKSID' => Configuration::get('PIWIK_SITEID'),
             'PIWIK_SITEID' => Configuration::get('PIWIK_SITEID'),
             'PIWIK_TOKEN_AUTH' => Configuration::get('PIWIK_TOKEN_AUTH'),
             'PIWIK_SESSION_TIMEOUT' => ($PIWIK_SESSION_TIMEOUT != 0 ? (int) ($PIWIK_SESSION_TIMEOUT / 60) : (int) (self::PK_SC_TIMEOUT )),
@@ -454,7 +653,24 @@ class piwikanalyticsjs extends Module {
             'PIWIK_COOKIE_DOMAIN' => Configuration::get('PIWIK_COOKIE_DOMAIN'),
             'PIWIK_SET_DOMAINS' => Configuration::get('PIWIK_SET_DOMAINS'),
             'PIWIK_DNT' => Configuration::get('PIWIK_DNT'),
-            'PIWIK_PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT
+            'PIWIK_PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT,
+            /* stuff thats isset by ajax calls to Piwik API ---(here to avoid not isset warnings..!)--- */
+            'PKAdminSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : ''),
+            'PKAdminEcommerce' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ecommerce : ''),
+            'PKAdminSiteSearch' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->sitesearch : ''),
+            'PKAdminSearchKeywordParameters' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->sitesearch_keyword_parameters : ''),
+            'PKAdminSearchCategoryParameters' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->sitesearch_category_parameters : ''),
+            'SPKSID' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->idsite : Configuration::get('PIWIK_SITEID')),
+            'PKAdminExcludedIps' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->excluded_ips : ''),
+            'PKAdminExcludedQueryParameters' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->excluded_parameters : ''),
+            'PKAdminTimezone' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->timezone : ''),
+            'PKAdminCurrency' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->currency : ''),
+            'PKAdminGroup' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->group : ''),
+            'PKAdminStartDate' => '',
+            'PKAdminSiteUrls' => '',
+            'PKAdminExcludedUserAgents' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->excluded_user_agents : ''),
+            'PKAdminKeepURLFragments' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->keep_url_fragment : 0),
+            'PKAdminSiteType' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->type : 'website'),
         );
     }
 
@@ -936,68 +1152,6 @@ class piwikanalyticsjs extends Module {
         }
     }
 
-    protected function getPiwikImageTrackingCode() {
-        $token_auth = Configuration::get('PIWIK_TOKEN_AUTH');
-        $idSite = (int) Configuration::get('PIWIK_SITEID');
-        $ret = array(
-            'default' => 'I need Site ID and Auth Token before i can get your image tracking code',
-            'proxy' => 'I need Site ID and Auth Token before i can get your image tracking code'
-        );
-        if (empty($token_auth) || empty($idSite) || $idSite == 0) {
-            return $ret;
-        }
-        $url = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https' : 'http') . "://"
-                . Configuration::get('PIWIK_HOST')
-                . "index.php?module=API"
-                . "&idSite=" . $idSite
-                . "&method=SitesManager.getImageTrackingCode&format=JSON&actionName=NoJavaScript"
-                . "&piwikUrl=" . urlencode(rtrim(Configuration::get('PIWIK_HOST'), '/'))
-                . "&token_auth=" . $token_auth;
-        $jsonObj = Tools::jsonDecode(file_get_contents($url));
-        $ret['default'] = htmlentities('<noscript>' . $jsonObj->value . '</noscript>');
-        $url = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https' : 'http') . "://"
-                . Configuration::get('PIWIK_HOST')
-                . "index.php?module=API"
-                . "&idSite=" . $idSite
-                . "&method=SitesManager.getImageTrackingCode&format=JSON&actionName=NoJavaScript"
-                . "&piwikUrl=" . urlencode(Configuration::get('PIWIK_PROXY_SCRIPT'))
-                . "&token_auth=" . $token_auth;
-        $jsonObj = Tools::jsonDecode(file_get_contents($url));
-        if ((bool) Configuration::get('PS_REWRITING_SETTINGS'))
-            $ret['proxy'] = str_replace(Configuration::get('PIWIK_HOST') . 'piwik.php', Configuration::get('PIWIK_PROXY_SCRIPT'), $ret['default']);
-        else
-            $ret['proxy'] = str_replace(Configuration::get('PIWIK_HOST') . 'piwik.php?', Configuration::get('PIWIK_PROXY_SCRIPT') . '&', $ret['default']);
-        return $ret;
-    }
-
-    protected function getPiwikSite() {
-        $token_auth = Configuration::get('PIWIK_TOKEN_AUTH');
-        $idSite = (int) Configuration::get('PIWIK_SITEID');
-        if (empty($token_auth) || empty($idSite) || $idSite == 0) {
-            $this->_errors .= $this->displayError($this->l("You need to set 'Piwik token auth' and 'Piwik site id', and save them before we can continue with the setup"));
-            return false;
-        }
-        $url = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https' : 'http') . "://"
-                . Configuration::get('PIWIK_HOST')
-                . "index.php?module=API"
-                . "&idSite=" . $idSite
-                . '&language=' . Context::getContext()->language->iso_code
-                . "&method=SitesManager.getSiteFromId&format=JSON"
-                . "&token_auth=" . $token_auth;
-        $jsonObj = Tools::jsonDecode(file_get_contents($url));
-        if (isset($jsonObj->result) && $jsonObj->result == 'error') {
-            $this->_errors .= $this->displayError($jsonObj->message);
-            return false;
-        }
-        if ($jsonObj[0]->ecommerce === false || $jsonObj[0]->ecommerce == 0) {
-            $this->_errors .= $this->displayError($this->l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page'));
-        }
-        if ($jsonObj[0]->sitesearch === false || $jsonObj[0]->sitesearch == 0) {
-            $this->_errors .= $this->displayError($this->l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page'));
-        }
-        return $jsonObj;
-    }
-
     /**
      * convert into default currentcy used in piwik
      * @param array $params
@@ -1129,6 +1283,18 @@ class piwikanalyticsjs extends Module {
         }
     }
 
+    private function __setCurrencies() {
+        $this->default_currency = array('value' => 0, 'label' => $this->l('Choose currency'));
+        if (empty($this->currencies)) {
+            foreach (Currency::getCurrencies() as $key => $val) {
+                $this->currencies[$key] = array(
+                    'iso_code' => $val['iso_code'],
+                    'name' => "{$val['name']} {$val['iso_code']}",
+                );
+            }
+        }
+    }
+
     private function getConfigFields($form = FALSE) {
         $fields = array(
             'PIWIK_USE_PROXY', 'PIWIK_HOST',
@@ -1166,11 +1332,6 @@ class piwikanalyticsjs extends Module {
      */
     public function install() {
 
-        /*
-         * check ps version
-         * add piwik iframe dashboard as submenu of stats main menu in prestashop
-         * --- if unable to get id of prestashop admin class "AdminParentStats" set piwik class as "-1 == main menu item"
-         */
         if (_PS_VERSION_ < '1.5' && _PS_VERSION_ > '1.3') {
             /* use tab in default stats page
               $AdminParentStats = Tab::getIdFromClassName('AdminStats');
