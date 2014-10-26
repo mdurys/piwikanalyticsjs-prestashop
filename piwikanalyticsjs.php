@@ -216,16 +216,24 @@ class piwikanalyticsjs extends Module {
             'type' => 'text',
             'label' => $this->l('Track visitors across subdomains'),
             'name' => 'PIWIK_COOKIE_DOMAIN',
-            'desc' => $this->l('Example: *.example.com'),
-            'hint' => $this->l('So if one visitor visits x.example.com and y.example.com, they will be counted as a unique visitor.'),
+            'desc' => $this->l('The default is the document domain; if your web site can be visited at both www.example.com and example.com, you would use: "*.example.com" OR ".example.com" without the quotes')
+            . '<br />'
+            . $this->l('Leave empty to exclude this from the tracking code'),
+            'hint' => $this->l('So if one visitor visits x.example.com and y.example.com, they will be counted as a unique visitor. (setCookieDomain)'),
             'required' => false
         );
         $fields_form[0]['form']['input'][] = array(
             'type' => 'text',
             'label' => $this->l('Hide known alias URLs'),
             'name' => 'PIWIK_SET_DOMAINS',
-            'desc' => $this->l('In the "Outlinks" report, hide clicks to known alias URLs, Example: *.example.com'),
-            'hint' => $this->l('So clicks on links to Alias URLs (eg. x.example.com) will not be counted as "Outlink".'),
+            'desc' => $this->l('In the "Outlinks" report, hide clicks to known alias URLs, Example: *.example.com')
+            . '<br />'
+            . $this->l('Note: to add multiple domains you must separate them with space " " one space')
+            . '<br />'
+            . $this->l('Note: the currently tracked website is added to this array automatically')
+            . '<br />'
+            . $this->l('Leave empty to exclude this from the tracking code'),
+            'hint' => $this->l('So clicks on links to Alias URLs (eg. x.example.com) will not be counted as "Outlink". (setDomains)'),
             'required' => false
         );
         $fields_form[0]['form']['input'][] = array(
@@ -409,8 +417,6 @@ class piwikanalyticsjs extends Module {
         $PIWIK_PRODID_V1 = Configuration::get('PIWIK_PRODID_V1');
         $PIWIK_PRODID_V2 = Configuration::get('PIWIK_PRODID_V2');
         $PIWIK_PRODID_V3 = Configuration::get('PIWIK_PRODID_V3');
-        $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
-        $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
         $PIWIK_PROXY_SCRIPT = Configuration::get('PIWIK_PROXY_SCRIPT');
         $PIWIK_RCOOKIE_TIMEOUT = (int) Configuration::get('PIWIK_RCOOKIE_TIMEOUT');
         $PIWIK_COOKIE_TIMEOUT = (int) Configuration::get('PIWIK_COOKIE_TIMEOUT');
@@ -429,8 +435,8 @@ class piwikanalyticsjs extends Module {
             'PIWIK_PRODID_V1' => (!empty($PIWIK_PRODID_V1) ? $PIWIK_PRODID_V1 : '{ID}-{ATTRID}#{REFERENCE}'),
             'PIWIK_PRODID_V2' => (!empty($PIWIK_PRODID_V2) ? $PIWIK_PRODID_V2 : '{ID}#{REFERENCE}'),
             'PIWIK_PRODID_V3' => (!empty($PIWIK_PRODID_V3) ? $PIWIK_PRODID_V3 : '{ID}-{ATTRID}'),
-            'PIWIK_COOKIE_DOMAIN' => (!empty($PIWIK_COOKIE_DOMAIN) ? $PIWIK_COOKIE_DOMAIN : '*.' . str_replace('www.', '', Tools::getShopDomain())),
-            'PIWIK_SET_DOMAINS' => (!empty($PIWIK_SET_DOMAINS) ? $PIWIK_SET_DOMAINS : Tools::getShopDomain()),
+            'PIWIK_COOKIE_DOMAIN' => Configuration::get('PIWIK_COOKIE_DOMAIN'),
+            'PIWIK_SET_DOMAINS' => Configuration::get('PIWIK_SET_DOMAINS'),
             'PIWIK_DNT' => Configuration::get('PIWIK_DNT'),
             'PIWIK_PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT
         );
@@ -442,7 +448,7 @@ class piwikanalyticsjs extends Module {
         if (Tools::isSubmit('submitUpdate' . $this->name)) {
             if (Tools::getIsset('PIWIK_HOST')) {
                 $tmp = Tools::getValue('PIWIK_HOST', '');
-                if (!empty($tmp) && (filter_var($tmp, FILTER_VALIDATE_URL) || filter_var('http://'.$tmp, FILTER_VALIDATE_URL))) {
+                if (!empty($tmp) && (filter_var($tmp, FILTER_VALIDATE_URL) || filter_var('http://' . $tmp, FILTER_VALIDATE_URL))) {
                     $tmp = str_replace(array('http://', 'https://', '//'), "", $tmp);
                     if (substr($tmp, -1) != "/") {
                         $tmp .= "/";
@@ -1014,13 +1020,25 @@ class piwikanalyticsjs extends Module {
             $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', $pksct);
         }
         unset($pksct);
-        
+
         $this->context->smarty->assign('PIWIK_EXHTML', Configuration::get('PIWIK_EXHTML'));
 
-        $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', Configuration::get('PIWIK_COOKIE_DOMAIN'));
+        $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
+        $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', (empty($PIWIK_COOKIE_DOMAIN) ? FALSE : $PIWIK_COOKIE_DOMAIN));
 
-        $PIWIK_SET_DOMAINS = "['" . trim(implode("','", explode(' ', Configuration::get('PIWIK_SET_DOMAINS'))), ",'") . "]";
-        $this->context->smarty->assign('PIWIK_SET_DOMAINS', (!empty($PIWIK_SET_DOMAINS) && strlen($PIWIK_SET_DOMAINS) > 5 ? $PIWIK_SET_DOMAINS : FALSE));
+        // _paq.push(['setDomains', "['331.xx.yyyyyyy.com','xx.yyyyyyy.com'','tesing.yyyyyyy.dk']"]);
+        $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
+        if (!empty($PIWIK_SET_DOMAINS)) {
+            $sdArr = explode(' ', Configuration::get('PIWIK_SET_DOMAINS'));
+            if (count($sdArr) > 1)
+                $PIWIK_SET_DOMAINS = "['" . trim(implode("','", $sdArr), ",'") . "']";
+            else
+                $PIWIK_SET_DOMAINS = "'{$sdArr[0]}'";
+            $this->context->smarty->assign('PIWIK_SET_DOMAINS', (!empty($PIWIK_SET_DOMAINS) ? $PIWIK_SET_DOMAINS : FALSE));
+            unset($sdArr);
+        }else {
+            $this->context->smarty->assign('PIWIK_SET_DOMAINS', FALSE);
+        }
 
         if ((bool) Configuration::get('PIWIK_DNT')) {
             $this->context->smarty->assign('PIWIK_DNT', "_paq.push([\"setDoNotTrack\", true]);");
