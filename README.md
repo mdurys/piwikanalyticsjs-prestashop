@@ -29,7 +29,7 @@ http://cmjnisse.github.io/piwikanalyticsjs-prestashop
 
 Bugs, New features
 --------------
-are and can only be fixed if they are reported, feel free use the issue system here at GitHub in case you don't like to use Github you are also welcome to report them by mail to "piwikanalyticsjs [AT] cmjscripter.net" (Text Only), note that if your mail gets flagged as spam i will not receive them
+can only be fixed or added if they are reported, feel free use the issue system here at GitHub in case you don't like to use Github you are also welcome to report them by mail to "piwikanalyticsjs [AT] cmjscripter.net" (Text Only), note that if your mail gets flagged as spam i will not receive them, before you report ANY issues please read this [wiki page first], if your are reporting issues in the master branch DON'T unless you propose a way to fix the issue, the master branch is for development only, if you are posting an issue in the issue tracker here at GitHub DO NOT POST IN A CLOSED topic unless the issue is the same or directly related to that issue, always create a new issue if you are unsure
 
 License
 ----
@@ -55,4 +55,4 @@ along with PiwikAnalyticsJS for prestashop.  If not, see <http://www.gnu.org/lic
 [Piwik]:http://piwik.org/
 [how user id is tracked]:http://piwik.org/docs/user-id/#how-requests-with-a-user-id-are-tracked
 [releases]:https://github.com/cmjnisse/piwikanalyticsjs-prestashop/releases
-
+[wiki page first]:https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki/Fixing---Reporting-issues
