@@ -264,6 +264,13 @@ class piwikanalyticsjs extends Module {
                 )
             ),
         );
+        $image_tracking = $this->getPiwikImageTrackingCode();
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'html',
+            'name' => $this->l('Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages') . "<br>"
+            . "<strong>" . $this->l('default') . "</strong>:<br /><i>{$image_tracking['default']}</i><br>"
+            . "<strong>" . $this->l('using proxy script') . "</strong>:<br /><i>{$image_tracking['proxy']}</i><br>"
+        );
         $fields_form[0]['form']['input'][] = array(
             'type' => 'textarea',
             'label' => $this->l('Extra HTML'),
@@ -929,7 +936,41 @@ class piwikanalyticsjs extends Module {
         }
     }
 
-    private function getPiwikSite() {
+    protected function getPiwikImageTrackingCode() {
+        $token_auth = Configuration::get('PIWIK_TOKEN_AUTH');
+        $idSite = (int) Configuration::get('PIWIK_SITEID');
+        $ret = array(
+            'default' => 'I need Site ID and Auth Token before i can get your image tracking code',
+            'proxy' => 'I need Site ID and Auth Token before i can get your image tracking code'
+        );
+        if (empty($token_auth) || empty($idSite) || $idSite == 0) {
+            return $ret;
+        }
+        $url = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https' : 'http') . "://"
+                . Configuration::get('PIWIK_HOST')
+                . "index.php?module=API"
+                . "&idSite=" . $idSite
+                . "&method=SitesManager.getImageTrackingCode&format=JSON&actionName=NoJavaScript"
+                . "&piwikUrl=" . urlencode(rtrim(Configuration::get('PIWIK_HOST'), '/'))
+                . "&token_auth=" . $token_auth;
+        $jsonObj = Tools::jsonDecode(file_get_contents($url));
+        $ret['default'] = htmlentities('<noscript>' . $jsonObj->value . '</noscript>');
+        $url = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https' : 'http') . "://"
+                . Configuration::get('PIWIK_HOST')
+                . "index.php?module=API"
+                . "&idSite=" . $idSite
+                . "&method=SitesManager.getImageTrackingCode&format=JSON&actionName=NoJavaScript"
+                . "&piwikUrl=" . urlencode(Configuration::get('PIWIK_PROXY_SCRIPT'))
+                . "&token_auth=" . $token_auth;
+        $jsonObj = Tools::jsonDecode(file_get_contents($url));
+        if ((bool) Configuration::get('PS_REWRITING_SETTINGS'))
+            $ret['proxy'] = str_replace(Configuration::get('PIWIK_HOST') . 'piwik.php', Configuration::get('PIWIK_PROXY_SCRIPT'), $ret['default']);
+        else
+            $ret['proxy'] = str_replace(Configuration::get('PIWIK_HOST') . 'piwik.php?', Configuration::get('PIWIK_PROXY_SCRIPT') . '&', $ret['default']);
+        return $ret;
+    }
+
+    protected function getPiwikSite() {
         $token_auth = Configuration::get('PIWIK_TOKEN_AUTH');
         $idSite = (int) Configuration::get('PIWIK_SITEID');
         if (empty($token_auth) || empty($idSite) || $idSite == 0) {
