@@ -46,6 +46,21 @@ class piwikanalyticsjs extends Module {
     private static $_isOrder = FALSE;
     protected $_errors = "";
 
+    /**
+     * setReferralCookieTimeout
+     */
+    const PK_RC_TIMEOUT = 262974;
+
+    /**
+     * setVisitorCookieTimeout
+     */
+    const PK_VC_TIMEOUT = 569777;
+
+    /**
+     * setSessionCookieTimeout
+     */
+    const PK_SC_TIMEOUT = 30;
+
     public function __construct($name = null, $context = null) {
         $this->name = 'piwikanalyticsjs';
         $this->tab = 'analytics_stats';
@@ -233,18 +248,6 @@ class piwikanalyticsjs extends Module {
             ),
         );
         $fields_form[0]['form']['input'][] = array(
-            'type' => 'text',
-            'label' => $this->l('Piwik Session Cookie timeout'),
-            'name' => 'PIWIK_SESSION_TIMEOUT',
-            'required' => false
-        );
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'text',
-            'label' => $this->l('Piwik Cookie timeout'),
-            'name' => 'PIWIK_COOKIE_TIMEOUT',
-            'required' => false
-        );
-        $fields_form[0]['form']['input'][] = array(
             'type' => 'textarea',
             'label' => $this->l('Extra HTML'),
             'name' => 'PIWIK_EXHTML',
@@ -365,6 +368,34 @@ class piwikanalyticsjs extends Module {
                     'desc' => $this->l('This template is used in case only "Product ID" and "Product Attribute ID" are available'),
                     'required' => false
                 ),
+                array(
+                    'type' => 'html',
+                    'name' => "<strong>{$this->l('Piwik Cookies')}</strong>"
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Piwik Session Cookie timeout'),
+                    'name' => 'PIWIK_SESSION_TIMEOUT',
+                    'required' => false,
+                    'hint' => $this->l('this value must be set in minutes'),
+                    'desc' => $this->l('Piwik Session Cookie timeout, the default is 30 minutes'),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Piwik Visitor Cookie timeout'),
+                    'name' => 'PIWIK_COOKIE_TIMEOUT',
+                    'required' => false,
+                    'hint' => $this->l('this value must be set in minutes'),
+                    'desc' => $this->l('Piwik Visitor Cookie timeout, the default is 13 months (569777 minutes)'),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Piwik Referral Cookie timeout'),
+                    'name' => 'PIWIK_RCOOKIE_TIMEOUT',
+                    'required' => false,
+                    'hint' => $this->l('this value must be set in minutes'),
+                    'desc' => $this->l('Piwik Referral Cookie timeout, the default is 6 months (262974 minutes)'),
+                ),
             ),
             'submit' => array(
                 'title' => $this->l('Save'),
@@ -381,12 +412,16 @@ class piwikanalyticsjs extends Module {
         $PIWIK_COOKIE_DOMAIN = Configuration::get('PIWIK_COOKIE_DOMAIN');
         $PIWIK_SET_DOMAINS = Configuration::get('PIWIK_SET_DOMAINS');
         $PIWIK_PROXY_SCRIPT = Configuration::get('PIWIK_PROXY_SCRIPT');
+        $PIWIK_RCOOKIE_TIMEOUT = (int) Configuration::get('PIWIK_RCOOKIE_TIMEOUT');
+        $PIWIK_COOKIE_TIMEOUT = (int) Configuration::get('PIWIK_COOKIE_TIMEOUT');
+        $PIWIK_SESSION_TIMEOUT = (int) Configuration::get('PIWIK_SESSION_TIMEOUT');
         return array(
             'PIWIK_HOST' => Configuration::get('PIWIK_HOST'),
             'PIWIK_SITEID' => Configuration::get('PIWIK_SITEID'),
             'PIWIK_TOKEN_AUTH' => Configuration::get('PIWIK_TOKEN_AUTH'),
-            'PIWIK_SESSION_TIMEOUT' => Configuration::get('PIWIK_SESSION_TIMEOUT'),
-            'PIWIK_COOKIE_TIMEOUT' => Configuration::get('PIWIK_COOKIE_TIMEOUT'),
+            'PIWIK_SESSION_TIMEOUT' => ($PIWIK_SESSION_TIMEOUT != 0 ? (int) ($PIWIK_SESSION_TIMEOUT / 60) : (int) (self::PK_SC_TIMEOUT )),
+            'PIWIK_COOKIE_TIMEOUT' => ($PIWIK_COOKIE_TIMEOUT != 0 ? (int) ($PIWIK_COOKIE_TIMEOUT / 60) : (int) (self::PK_VC_TIMEOUT)),
+            'PIWIK_RCOOKIE_TIMEOUT' => ($PIWIK_RCOOKIE_TIMEOUT != 0 ? (int) ($PIWIK_RCOOKIE_TIMEOUT / 60) : (int) (self::PK_RC_TIMEOUT)),
             'PIWIK_USE_PROXY' => Configuration::get('PIWIK_USE_PROXY'),
             'PIWIK_EXHTML' => Configuration::get('PIWIK_EXHTML'),
             'PIWIK_CRHTTPS' => Configuration::get('PIWIK_CRHTTPS'),
@@ -407,34 +442,51 @@ class piwikanalyticsjs extends Module {
         if (Tools::isSubmit('submitUpdate' . $this->name)) {
             if (Tools::getIsset('PIWIK_HOST')) {
                 $tmp = Tools::getValue('PIWIK_HOST', '');
-                if (!empty($tmp) && filter_var($tmp, FILTER_VALIDATE_URL)) {
+                if (!empty($tmp) && (filter_var($tmp, FILTER_VALIDATE_URL) || filter_var('http://'.$tmp, FILTER_VALIDATE_URL))) {
                     $tmp = str_replace(array('http://', 'https://', '//'), "", $tmp);
                     if (substr($tmp, -1) != "/") {
                         $tmp .= "/";
                     }
                     Configuration::updateValue('PIWIK_HOST', $tmp);
-                }  else {
+                } else {
                     $_html .= $this->displayError($this->l('Piwik host cannot be empty'));
                 }
             }
-            if (Tools::getIsset('PIWIK_SITEID')){
+            if (Tools::getIsset('PIWIK_SITEID')) {
                 $tmp = (int) Tools::getValue('PIWIK_SITEID', 0);
                 Configuration::updateValue('PIWIK_SITEID', $tmp);
                 if ($tmp <= 0) {
                     $_html .= $this->displayError($this->l('Piwik site id is lower or equal to "0"'));
                 }
             }
-            if (Tools::getIsset('PIWIK_TOKEN_AUTH')){
+            if (Tools::getIsset('PIWIK_TOKEN_AUTH')) {
                 $tmp = Tools::getValue('PIWIK_TOKEN_AUTH', '');
                 Configuration::updateValue('PIWIK_TOKEN_AUTH', $tmp);
                 if (empty($tmp)) {
                     $_html .= $this->displayError($this->l('Piwik auth token is empty'));
                 }
             }
-            if (Tools::getIsset('PIWIK_COOKIE_TIMEOUT'))
-                Configuration::updateValue('PIWIK_COOKIE_TIMEOUT', Tools::getValue('PIWIK_COOKIE_TIMEOUT'));
-            if (Tools::getIsset('PIWIK_SESSION_TIMEOUT'))
-                Configuration::updateValue('PIWIK_SESSION_TIMEOUT', Tools::getValue('PIWIK_SESSION_TIMEOUT'));
+            /* setReferralCookieTimeout */
+            if (Tools::getIsset('PIWIK_RCOOKIE_TIMEOUT')) {
+                // the default is 6 months
+                $tmp = (int) Tools::getValue('PIWIK_RCOOKIE_TIMEOUT', self::PK_RC_TIMEOUT);
+                $tmp = (int) ($tmp * 60); //* convert to seconds
+                Configuration::updateValue('PIWIK_RCOOKIE_TIMEOUT', $tmp);
+            }
+            /* setVisitorCookieTimeout */
+            if (Tools::getIsset('PIWIK_COOKIE_TIMEOUT')) {
+                // the default is 13 months
+                $tmp = (int) Tools::getValue('PIWIK_COOKIE_TIMEOUT', self::PK_VC_TIMEOUT);
+                $tmp = (int) ($tmp * 60); //* convert to seconds
+                Configuration::updateValue('PIWIK_COOKIE_TIMEOUT', $tmp);
+            }
+            /* setSessionCookieTimeout */
+            if (Tools::getIsset('PIWIK_SESSION_TIMEOUT')) {
+                // the default is 30 minutes
+                $tmp = (int) Tools::getValue('PIWIK_SESSION_TIMEOUT', self::PK_SC_TIMEOUT);
+                $tmp = (int) ($tmp * 60); //* convert to seconds
+                Configuration::updateValue('PIWIK_SESSION_TIMEOUT', $tmp);
+            }
             if (Tools::getIsset('PIWIK_USE_PROXY'))
                 Configuration::updateValue('PIWIK_USE_PROXY', Tools::getValue('PIWIK_USE_PROXY'));
             if (Tools::getIsset('PIWIK_EXHTML'))
@@ -945,10 +997,24 @@ class piwikanalyticsjs extends Module {
 
         $this->context->smarty->assign('PIWIK_SITEID', Configuration::get('PIWIK_SITEID'));
 
-        $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', Configuration::get('PIWIK_COOKIE_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
+        $pkvct = (int) Configuration::get('PIWIK_COOKIE_TIMEOUT'); /* no iset if the same as default */
+        if ($pkvct != 0 && $pkvct !== FALSE && ($pkvct != (int) (self::PK_VC_TIMEOUT * 60))) {
+            $this->context->smarty->assign('PIWIK_COOKIE_TIMEOUT', $pkvct);
+        }
+        unset($pkvct);
 
-        $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', Configuration::get('PIWIK_SESSION_TIMEOUT') ? Configuration::get('PIWIK_COOKIE_TIMEOUT') : 1209600);
+        $pkrct = (int) Configuration::get('PIWIK_RCOOKIE_TIMEOUT'); /* no iset if the same as default */
+        if ($pkrct != 0 && $pkrct !== FALSE && ($pkrct != (int) (self::PK_RC_TIMEOUT * 60))) {
+            $this->context->smarty->assign('PIWIK_RCOOKIE_TIMEOUT', $pkrct);
+        }
+        unset($pkrct);
 
+        $pksct = (int) Configuration::get('PIWIK_SESSION_TIMEOUT'); /* no iset if the same as default */
+        if ($pksct != 0 && $pksct !== FALSE && ($pksct != (int) (self::PK_SC_TIMEOUT * 60))) {
+            $this->context->smarty->assign('PIWIK_SESSION_TIMEOUT', $pksct);
+        }
+        unset($pksct);
+        
         $this->context->smarty->assign('PIWIK_EXHTML', Configuration::get('PIWIK_EXHTML'));
 
         $this->context->smarty->assign('PIWIK_COOKIE_DOMAIN', Configuration::get('PIWIK_COOKIE_DOMAIN'));
@@ -976,12 +1042,13 @@ class piwikanalyticsjs extends Module {
             'PIWIK_PRODID_V1', 'PIWIK_PRODID_V2',
             'PIWIK_PRODID_V3', 'PIWIK_COOKIE_DOMAIN',
             'PIWIK_SET_DOMAINS', 'PIWIK_DNT', 'PIWIK_EXHTML',
+            'PIWIK_RCOOKIE_TIMEOUT',
         );
         $defaults = array(
-            0, "", 0, "", 1209600, 1209600, 'EUR', 0,
+            0, "", 0, "", self::PK_VC_TIMEOUT, self::PK_SC_TIMEOUT, 'EUR', 0,
             '{ID}-{ATTRID}#{REFERENCE}', '{ID}#{REFERENCE}',
             '{ID}#{ATTRID}', Tools::getShopDomain(), '', 0,
-            '',
+            '', self::PK_RC_TIMEOUT,
         );
         $ret = array();
         if ($form)

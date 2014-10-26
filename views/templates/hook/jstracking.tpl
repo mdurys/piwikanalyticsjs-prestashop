@@ -37,8 +37,15 @@
         {if isset($PIWIK_SET_DOMAINS) && $PIWIK_SET_DOMAINS eq true}
         _paq.push(['setDomains', '{$PIWIK_SET_DOMAINS}']);
         {/if}
+        {if isset($PIWIK_COOKIE_TIMEOUT)}
         _paq.push(['setVisitorCookieTimeout', '{$PIWIK_COOKIE_TIMEOUT}']);
+        {/if}
+        {if isset($PIWIK_SESSION_TIMEOUT)}
         _paq.push(['setSessionCookieTimeout', '{$PIWIK_SESSION_TIMEOUT}']);
+        {/if}
+        {if isset($PIWIK_RCOOKIE_TIMEOUT)}
+        _paq.push(['setReferralCookieTimeout', '{$PIWIK_RCOOKIE_TIMEOUT}']);
+        {/if}
         _paq.push(['enableLinkTracking']);
     {if isset($PIWIK_UUID)}
         _paq.push(['setUserId', '{$PIWIK_UUID}']);
