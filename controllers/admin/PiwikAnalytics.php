@@ -26,11 +26,6 @@
 if (!defined('_PS_VERSION_'))
     exit;
 
-/**
- * Description of PiwikAnalytics
- *
- * @author Christian
- */
 class PiwikAnalyticsController extends ModuleAdminController {
 
     public function init() {
