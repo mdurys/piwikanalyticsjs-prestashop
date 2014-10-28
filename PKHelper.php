@@ -1,7 +1,8 @@
 <?php
 
-if (!defined('PHP_VERSION_ID'))
-    die();
+if (!defined('_PS_VERSION_'))
+    exit;
+
 /*
  * Copyright (C) 2014 Christian Jensen
  *
