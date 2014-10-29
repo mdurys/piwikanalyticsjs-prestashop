@@ -101,9 +101,8 @@ class piwikanalyticsjs extends Module {
             }
         }
         self::$_isOrder = FALSE;
-        $this->_errors = "";
-
         require_once dirname(__FILE__) . '/PKHelper.php';
+        $this->_errors = PKHelper::$errors = PKHelper::$error = "";
     }
 
     /**
@@ -116,8 +115,9 @@ class piwikanalyticsjs extends Module {
             global $currentIndex;
         $_html = "";
         $_html .= $this->processFormsUpdate();
-        $this->piwikSite = PKHelper::getPiwikSite($errors, $this);
-        $this->_errors .= $errors;
+        $this->piwikSite = PKHelper::getPiwikSite();
+        $this->displayErrors(PKHelper::$errors);
+        PKHelper::$errors = PKHelper::$error = "";
         $this->__setCurrencies();
 
         //* warnings on module configure page
@@ -264,6 +264,8 @@ class piwikanalyticsjs extends Module {
             ),
         );
         $image_tracking = PKHelper::getPiwikImageTrackingCode();
+        $this->displayErrors(PKHelper::$errors);
+        PKHelper::$errors = PKHelper::$error = "";
         $fields_form[0]['form']['input'][] = array(
             'type' => 'html',
             'name' => $this->l('Piwik image tracking code append one of them to field "Extra HTML" this will add images tracking code to all your pages') . "<br>"
@@ -279,22 +281,21 @@ class piwikanalyticsjs extends Module {
             'cols' => 50,
         );
 
-        if ($this->piwikSite !== FALSE) {
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'select',
-                'label' => $this->l('Piwik Currency'),
-                'name' => 'PIWIK_DEFAULT_CURRENCY',
-                'desc' => sprintf($this->l('Based on your settings in Piwik your default currency is %s'), $this->piwikSite[0]->currency),
-                'options' => array(
-                    'default' => $this->default_currency,
-                    'query' => $this->currencies,
-                    'id' => 'iso_code',
-                    'name' => 'name'
-                ),
-            );
-        }
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'select',
+            'label' => $this->l('Piwik Currency'),
+            'name' => 'PIWIK_DEFAULT_CURRENCY',
+            'desc' => sprintf($this->l('Based on your settings in Piwik your default currency is %s'), ($this->piwikSite !== FALSE ? $this->piwikSite[0]->currency : $this->l('unknown'))),
+            'options' => array(
+                'default' => $this->default_currency,
+                'query' => $this->currencies,
+                'id' => 'iso_code',
+                'name' => 'name'
+            ),
+        );
+        
         $fields_form[0]['form']['submit'] = array(
-                'title' => $this->l('Save'),
+            'title' => $this->l('Save'),
         );
 
 
@@ -400,6 +401,8 @@ class piwikanalyticsjs extends Module {
 
         if ($this->piwikSite !== FALSE) {
             $tmp = PKHelper::getMyPiwikSites(TRUE);
+            $this->displayErrors(PKHelper::$errors);
+            PKHelper::$errors = PKHelper::$error = "";
             $pksite_default = array('value' => 0, 'label' => $this->l('Choose Piwik site'));
             $pksites = array();
             foreach ($tmp as $pksid) {
@@ -413,6 +416,8 @@ class piwikanalyticsjs extends Module {
             $pktimezone_default = array('value' => 0, 'label' => $this->l('Choose Timezone'));
             $pktimezones = array();
             $tmp = PKHelper::getTimezonesList();
+            $this->displayErrors(PKHelper::$errors);
+            PKHelper::$errors = PKHelper::$error = "";
             foreach ($tmp as $key => $pktz) {
                 if (!isset($pktimezones[$key])) {
                     $pktimezones[$key] = array(
@@ -618,7 +623,20 @@ class piwikanalyticsjs extends Module {
                         . "    \n"
                         . "return false;"
                         . "}"
-                        . "</script>"
+                        . "</script>",
+                    /*
+                     *  SitesManager.updateSite (
+                     *      idSite,siteName = '',
+                     *      urls = '', ecommerce = '',
+                     *      siteSearch = '', searchKeywordParameters = '',
+                     *      searchCategoryParameters = '', excludedIps = '',
+                     *      excludedQueryParameters = '',  timezone = '',
+                     *      currency = '', group = '', startDate = '',
+                     *      excludedUserAgents = '',
+                     *      keepURLFragments = '',
+                     *      type = ''
+                     *  )
+                     */
                     ),
                 ),
             );
@@ -1149,6 +1167,14 @@ class piwikanalyticsjs extends Module {
             return str_replace(array('{ID}', '{ATTRID}'), array($id, $attrid), $PIWIK_PRODID_V3);
         } else {
             return $id;
+        }
+    }
+
+    public function displayErrors($errors) {
+        if (!empty($errors)) {
+            foreach ($errors as $key => $value) {
+                $this->_errors .= $this->displayError($value);
+            }
         }
     }
 

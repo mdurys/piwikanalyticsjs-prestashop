@@ -27,13 +27,14 @@ if (!defined('_PS_VERSION_'))
  */
 
 class PKHelper {
-
+    public static $errors = array();
+    public static $error = "";
     protected static $_cachedResults = array();
 
     public static function getPiwikImageTrackingCode() {
         $ret = array(
-            'default' => 'I need Site ID and Auth Token before i can get your image tracking code',
-            'proxy' => 'I need Site ID and Auth Token before i can get your image tracking code'
+            'default' => self::l('I need Site ID and Auth Token before i can get your image tracking code'),
+            'proxy' => self::l('I need Site ID and Auth Token before i can get your image tracking code')
         );
 
         $idSite = (int) Configuration::get('PIWIK_SITEID');
@@ -60,7 +61,11 @@ class PKHelper {
         return $ret;
     }
 
-    public static function getPiwikSite(& $errors, & $module) {
+    /**
+     * get Piwik site based on the current settings in the configuration
+     * @return stdClass[]
+     */
+    public static function getPiwikSite() {
         $idSite = (int) Configuration::get('PIWIK_SITEID');
         if (!self::baseTest() || ($idSite <= 0))
             return false;
@@ -76,17 +81,20 @@ class PKHelper {
         }
         if (self::$_cachedResults[$md5Url] !== FALSE) {
             if (isset(self::$_cachedResults[$md5Url]->result) && self::$_cachedResults[$md5Url]->result == 'error') {
-                $errors .= $module->displayError(self::$_cachedResults[$md5Url]->message);
+                self::$error = self::$_cachedResults[$md5Url]->message;
+                self::$errors[] = self::$error;
                 return false;
             }
             if (!isset(self::$_cachedResults[$md5Url][0])) {
                 return false;
             }
             if ((bool) self::$_cachedResults[$md5Url][0]->ecommerce === false || self::$_cachedResults[$md5Url][0]->ecommerce == 0) {
-                $errors .= $module->displayError($module->l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page'));
+                self::$error = self::l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page');
+                self::$errors[] = self::$error;
             }
             if ((bool) self::$_cachedResults[$md5Url][0]->sitesearch === false || self::$_cachedResults[$md5Url][0]->sitesearch == 0) {
-                $errors .= $module->displayError($module->l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page'));
+                self::$error = self::l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page');
+                self::$errors[] = self::$error;
             }
             return self::$_cachedResults[$md5Url];
         }
@@ -179,19 +187,56 @@ class PKHelper {
      * @return boolean
      */
     protected static function baseTest() {
+        static $_error1 = FALSE;
         $pkToken = Configuration::get('PIWIK_TOKEN_AUTH');
         $pkHost = Configuration::get('PIWIK_HOST');
-        if (empty($pkToken) || empty($pkHost))
+        if (empty($pkToken) || empty($pkHost)) {
+            if (!$_error1) {
+                self::$error = self::l('Piwik auth token and/or Piwik site id cannot be empty');
+                self::$errors[] = self::$error;
+                $_error1 = TRUE;
+            }
             return false;
+        }
         return true;
     }
 
+    /**
+     * get output of api as json decoded object
+     * @param string $url the full http(s) url to use for fetching the api result
+     * @return boolean
+     */
     protected static function getAsJsonDecoded($url) {
-        $getF = @file_get_contents($url);
+        $options = array(
+            'http' => array(
+                'method' => "GET",
+                'header' => "Accept-language: en\r\n" .
+                (isset($_SERVER['HTTP_USER_AGENT']) ? "User-Agent: {$_SERVER['HTTP_USER_AGENT']}\r\n" : '')
+            /* tested on server that denied empty(or php default) user agent so set it to browser */
+            )
+        );
+
+        $context = stream_context_create($options);
+        $getF = @file_get_contents($url, false, $context);
         if ($getF !== FALSE) {
             return Tools::jsonDecode($getF);
         }
+        $http_response = "";
+        foreach ($http_response_header as $value) {
+            if (preg_match("/^HTTP\/.*", $value)) {
+                $http_response = ':' . $value;
+            }
+        }
+        self::$error = sprintf(self::l('Unable to connect to api %s'), $http_response);
+        self::$errors[] = self::$error;
         return FALSE;
+    }
+
+    /**
+     * @see Module::l
+     */
+    private static function l($string, $specific = false) {
+        return Translate::getModuleTranslation('piwikanalyticsjs', $string, ($specific) ? $specific : 'piwikanalyticsjs');
     }
 
 }
