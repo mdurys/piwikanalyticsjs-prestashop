@@ -207,10 +207,13 @@ class PKHelper {
      * @return boolean
      */
     protected static function getAsJsonDecoded($url) {
+        static $_error2 = FALSE;
+        $lng = strtolower((isset(Context::getContext()->language->iso_code)?Context::getContext()->language->iso_code:'en'));
         $options = array(
             'http' => array(
                 'method' => "GET",
-                'header' => "Accept-language: en\r\n" .
+                'header' => "Accept-language: {$lng}\r\n" .
+                /*sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $_SERVER['HTTP_ACCEPT_LANGUAGE'])),*/
                 (isset($_SERVER['HTTP_USER_AGENT']) ? "User-Agent: {$_SERVER['HTTP_USER_AGENT']}\r\n" : '')
             /* tested on server that denied empty(or php default) user agent so set it to browser */
             )
@@ -223,12 +226,15 @@ class PKHelper {
         }
         $http_response = "";
         foreach ($http_response_header as $value) {
-            if (preg_match("/^HTTP\/.*", $value)) {
+            if (preg_match("/^HTTP\/.*/i", $value)) {
                 $http_response = ':' . $value;
             }
         }
-        self::$error = sprintf(self::l('Unable to connect to api %s'), $http_response);
-        self::$errors[] = self::$error;
+        if (!$_error2) {
+            self::$error = sprintf(self::l('Unable to connect to api %s'), $http_response);
+            self::$errors[] = self::$error;
+            $_error2 = TRUE;
+        }
         return FALSE;
     }
 
@@ -236,7 +242,12 @@ class PKHelper {
      * @see Module::l
      */
     private static function l($string, $specific = false) {
-        return Translate::getModuleTranslation('piwikanalyticsjs', $string, ($specific) ? $specific : 'piwikanalyticsjs');
+        return Translate::getModuleTranslation('piwikanalyticsjs', $string, ($specific) ? $specific : 'pkhelper');
+        // the following lines are need for the translation to work properly
+        // $this->l('I need Site ID and Auth Token before i can get your image tracking code')
+        // $this->l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page')
+        // $this->l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page')
+        // $this->l('Unable to connect to api %s')
     }
 
 }
