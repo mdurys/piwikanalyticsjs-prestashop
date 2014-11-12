@@ -27,23 +27,93 @@ if (!defined('_PS_VERSION_'))
  */
 
 class PKHelper {
+
+    public static $acp = array(
+        'updatePiwikSite' => array(
+            'required' => array('idSite'),
+            'optional' => array('siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
+            'order' => array('idSite', 'siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
+        )
+    );
+
+    /**
+     * all errors isset by class PKHelper
+     * @var string[] 
+     */
     public static $errors = array();
+
+    /**
+     * last isset error by class PKHelper
+     * @var string
+     */
     public static $error = "";
     protected static $_cachedResults = array();
 
+    /**
+     * prefix to use for configurations values
+     */
+    const CPREFIX = "PIWIK_";
+
+    public static function updatePiwikSite($idSite, $siteName = NULL, $urls = NULL, $ecommerce = NULL, $siteSearch = NULL, $searchKeywordParameters = NULL, $searchCategoryParameters = NULL, $excludedIps = NULL, $excludedQueryParameters = NULL, $timezone = NULL, $currency = NULL, $group = NULL, $startDate = NULL, $excludedUserAgents = NULL, $keepURLFragments = NULL, $type = NULL) {
+        if (!self::baseTest() || ($idSite <= 0))
+            return false;
+        $url = self::getBaseURL();
+        $url .= "&method=SitesManager.updateSite&format=JSON";
+        if ($siteName !== NULL)
+            $url .= "&siteName=" . urlencode($siteName);
+        if ($urls !== NULL)
+            $url .= "&urls=" . urlencode($urls);
+        if ($ecommerce !== NULL)
+            $url .= "&ecommerce=" . urlencode($ecommerce);
+        if ($siteSearch !== NULL)
+            $url .= "&siteSearch=" . urlencode($siteSearch);
+        if ($searchKeywordParameters !== NULL)
+            $url .= "&searchKeywordParameters=" . urlencode($searchKeywordParameters);
+        if ($searchCategoryParameters !== NULL)
+            $url .= "&searchCategoryParameters=" . urlencode($searchCategoryParameters);
+        if ($excludedIps !== NULL)
+            $url .= "&excludedIps=" . urlencode($excludedIps);
+        if ($excludedQueryParameters !== NULL)
+            $url .= "&excludedQueryParameters=" . urlencode($excludedQueryParameters);
+        if ($timezone !== NULL)
+            $url .= "&timezone=" . urlencode($timezone);
+        if ($currency !== NULL)
+            $url .= "&currency=" . urlencode($currency);
+        if ($group !== NULL)
+            $url .= "&group=" . urlencode($group);
+        if ($startDate !== NULL)
+            $url .= "&startDate=" . urlencode($startDate);
+        if ($excludedUserAgents !== NULL)
+            $url .= "&excludedUserAgents=" . urlencode($excludedUserAgents);
+        if ($keepURLFragments !== NULL)
+            $url .= "&keepURLFragments=" . urlencode($keepURLFragments);
+        if ($type !== NULL)
+            $url .= "&type=" . urlencode($type);
+        $md5Url = md5($url);
+        /* {"result":"success","message":"ok"} */
+        if ($result = self::getAsJsonDecoded($url))
+            return ($result->result == 'success' && $result->message == 'ok' ? TRUE : ($result->result != 'success' ? $result->message : FALSE));
+        else
+            return FALSE;
+    }
+
+    /**
+     * get image tracking code for use with or withou proxy script
+     * @return array
+     */
     public static function getPiwikImageTrackingCode() {
         $ret = array(
             'default' => self::l('I need Site ID and Auth Token before i can get your image tracking code'),
             'proxy' => self::l('I need Site ID and Auth Token before i can get your image tracking code')
         );
 
-        $idSite = (int) Configuration::get('PIWIK_SITEID');
+        $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
         if (!self::baseTest() || ($idSite <= 0))
             return $ret;
 
         $url = self::getBaseURL();
         $url .= "&method=SitesManager.getImageTrackingCode&format=JSON&actionName=NoJavaScript";
-        $url .= "&piwikUrl=" . urlencode(rtrim(Configuration::get('PIWIK_HOST'), '/'));
+        $url .= "&piwikUrl=" . urlencode(rtrim(Configuration::get(PKHelper::CPREFIX . 'HOST'), '/'));
         $md5Url = md5($url);
         if (!isset(self::$_cachedResults[$md5Url])) {
             if ($result = self::getAsJsonDecoded($url))
@@ -54,9 +124,9 @@ class PKHelper {
         if (self::$_cachedResults[$md5Url] !== FALSE) {
             $ret['default'] = htmlentities('<noscript>' . self::$_cachedResults[$md5Url]->value . '</noscript>');
             if ((bool) Configuration::get('PS_REWRITING_SETTINGS'))
-                $ret['proxy'] = str_replace(Configuration::get('PIWIK_HOST') . 'piwik.php', Configuration::get('PIWIK_PROXY_SCRIPT'), $ret['default']);
+                $ret['proxy'] = str_replace(Configuration::get(PKHelper::CPREFIX . 'HOST') . 'piwik.php', Configuration::get(PKHelper::CPREFIX . 'PROXY_SCRIPT'), $ret['default']);
             else
-                $ret['proxy'] = str_replace(Configuration::get('PIWIK_HOST') . 'piwik.php?', Configuration::get('PIWIK_PROXY_SCRIPT') . '&', $ret['default']);
+                $ret['proxy'] = str_replace(Configuration::get(PKHelper::CPREFIX . 'HOST') . 'piwik.php?', Configuration::get(PKHelper::CPREFIX . 'PROXY_SCRIPT') . '&', $ret['default']);
         }
         return $ret;
     }
@@ -66,7 +136,7 @@ class PKHelper {
      * @return stdClass[]
      */
     public static function getPiwikSite() {
-        $idSite = (int) Configuration::get('PIWIK_SITEID');
+        $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
         if (!self::baseTest() || ($idSite <= 0))
             return false;
 
@@ -170,15 +240,15 @@ class PKHelper {
      */
     protected static function getBaseURL($idSite = NULL, $pkHost = NULL, $https = NULL, $pkModule = 'API', $isoCode = NULL, $tokenAuth = NULL) {
         if ($https === NULL)
-            $https = (bool) Configuration::get('PIWIK_CRHTTPS');
+            $https = (bool) Configuration::get(PKHelper::CPREFIX . 'CRHTTPS');
         if ($pkHost === NULL)
-            $pkHost = Configuration::get('PIWIK_HOST');
+            $pkHost = Configuration::get(PKHelper::CPREFIX . 'HOST');
         if ($isoCode === NULL)
-            $isoCode = Context::getContext()->language->iso_code;
+            $isoCode = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
         if ($idSite === NULL)
-            $idSite = Configuration::get('PIWIK_SITEID');
+            $idSite = Configuration::get(PKHelper::CPREFIX . 'SITEID');
         if ($tokenAuth === NULL)
-            $tokenAuth = Configuration::get('PIWIK_TOKEN_AUTH');
+            $tokenAuth = Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH');
         return ($https ? 'https' : 'http') . "://{$pkHost}index.php?module={$pkModule}&language={$isoCode}&idSite={$idSite}&token_auth={$tokenAuth}";
     }
 
@@ -188,8 +258,8 @@ class PKHelper {
      */
     protected static function baseTest() {
         static $_error1 = FALSE;
-        $pkToken = Configuration::get('PIWIK_TOKEN_AUTH');
-        $pkHost = Configuration::get('PIWIK_HOST');
+        $pkToken = Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH');
+        $pkHost = Configuration::get(PKHelper::CPREFIX . 'HOST');
         if (empty($pkToken) || empty($pkHost)) {
             if (!$_error1) {
                 self::$error = self::l('Piwik auth token and/or Piwik site id cannot be empty');
@@ -208,12 +278,12 @@ class PKHelper {
      */
     protected static function getAsJsonDecoded($url) {
         static $_error2 = FALSE;
-        $lng = strtolower((isset(Context::getContext()->language->iso_code)?Context::getContext()->language->iso_code:'en'));
+        $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
         $options = array(
             'http' => array(
                 'method' => "GET",
                 'header' => "Accept-language: {$lng}\r\n" .
-                /*sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $_SERVER['HTTP_ACCEPT_LANGUAGE'])),*/
+                /* sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $_SERVER['HTTP_ACCEPT_LANGUAGE'])), */
                 (isset($_SERVER['HTTP_USER_AGENT']) ? "User-Agent: {$_SERVER['HTTP_USER_AGENT']}\r\n" : '')
             /* tested on server that denied empty(or php default) user agent so set it to browser */
             )
