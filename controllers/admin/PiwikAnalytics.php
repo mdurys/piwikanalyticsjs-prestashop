@@ -50,6 +50,9 @@ class PiwikAnalyticsController extends ModuleAdminController {
             $this->bootstrap = false;
         else
             $this->initPageHeaderToolbar();
+        $http = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://');
+        $PIWIK_HOST = Configuration::get('PIWIK_HOST');
+        $PIWIK_SITEID = (int) Configuration::get('PIWIK_SITEID');
         if ($this->display == 'view') {
 
             // Some controllers use the view action without an object
@@ -57,8 +60,6 @@ class PiwikAnalyticsController extends ModuleAdminController {
                 $this->loadObject(true);
 
 
-            $PIWIK_HOST = Configuration::get('PIWIK_HOST');
-            $PIWIK_SITEID = (int) Configuration::get('PIWIK_SITEID');
             $PIWIK_TOKEN_AUTH = Configuration::get('PIWIK_TOKEN_AUTH');
             if ((empty($PIWIK_HOST) || $PIWIK_HOST === FALSE) ||
                     ($PIWIK_SITEID <= 0 || $PIWIK_SITEID === FALSE) ||
@@ -79,7 +80,7 @@ EOF;
                 $lng = new LanguageCore($this->context->cookie->id_lang);
                 $this->content .= ''
                         . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
-                        . 'src="' . ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://')
+                        . 'src="' . $http
                         . $PIWIK_HOST . 'index.php'
                         . '?module=Widgetize'
                         . '&action=iframe'
@@ -93,6 +94,23 @@ EOF;
             }
         }
         $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop');
+        // PKHelper::CPREFIX . 'USRNAME'
+        $user = Configuration::get('PIWIK_USRNAME');
+        // PKHelper::CPREFIX . 'USRPASSWD'
+        $passwd = Configuration::get('PIWIK_USRPASSWD');
+        if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE)) {
+            $this->page_header_toolbar_btn['stats'] = array(
+                'href' => $http . $PIWIK_HOST . 'index.php?module=Login&action=logme&login=' . $user . '&password=' . md5($passwd) . '&idSite=' . $PIWIK_SITEID,
+                'desc' => $this->l('Piwik'),
+                'target' => true
+            );
+        } else {
+            $this->page_header_toolbar_btn['stats'] = array(
+                'href' => $http . $PIWIK_HOST . 'index.php',
+                'desc' => $this->l('Piwik'),
+                'target' => true
+            );
+        }
 
         $this->context->smarty->assign(array(
             'content' => $this->content,

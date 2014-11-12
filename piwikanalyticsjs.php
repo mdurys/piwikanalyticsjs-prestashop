@@ -298,6 +298,21 @@ class piwikanalyticsjs extends Module {
             ),
         );
 
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'text',
+            'label' => $this->l('Piwik User name'),
+            'name' => PKHelper::CPREFIX . 'USRNAME',
+            'desc' => $this->l('You can store your Username for Piwik here to make it easy to open your piwik interface from your stats page with automatic login'),
+            'required' => false
+        );
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'password',
+            'label' => $this->l('Piwik User password'),
+            'name' => PKHelper::CPREFIX . 'USRPASSWD',
+            'desc' => $this->l('You can store your Password for Piwik here to make it easy to open your piwik interface from your stats page with automatic login'),
+            'required' => false
+        );
+
         $fields_form[0]['form']['submit'] = array(
             'title' => $this->l('Save'),
         );
@@ -644,7 +659,7 @@ class piwikanalyticsjs extends Module {
                         . "            'timezone': timezone,\n"
                         . "            'currency': currency,\n"
                         . "            'keepURLFragments': keepURLFragments,\n"
-                        /*. "            'group': group,\n"*/
+                        /* . "            'group': group,\n" */
                         . "            'excludedUserAgents': excludedUserAgents,\n"
                         . "        },\n"
                         . "        beforeSend: function(){\n"
@@ -742,6 +757,8 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'SET_DOMAINS' => Configuration::get(PKHelper::CPREFIX . 'SET_DOMAINS'),
             PKHelper::CPREFIX . 'DNT' => Configuration::get(PKHelper::CPREFIX . 'DNT'),
             PKHelper::CPREFIX . 'PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT,
+            PKHelper::CPREFIX . 'USRNAME' => Configuration::get(PKHelper::CPREFIX . 'USRNAME'),
+            PKHelper::CPREFIX . 'USRPASSWD' => Configuration::get(PKHelper::CPREFIX . 'USRPASSWD'),
             /* stuff thats isset by ajax calls to Piwik API ---(here to avoid not isset warnings..!)--- */
             'PKAdminSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : ''),
             'PKAdminEcommerce' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ecommerce : ''),
@@ -834,11 +851,13 @@ class piwikanalyticsjs extends Module {
             if (Tools::getIsset(PKHelper::CPREFIX . 'PRODID_V3'))
                 Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V3', Tools::getValue(PKHelper::CPREFIX . 'PRODID_V3', '{ID}#{ATTRID}'));
             if (Tools::getIsset(PKHelper::CPREFIX . 'DEFAULT_CURRENCY'))
-                Configuration::updateValue("PIWIK_DEFAULT_CURRENCY", Tools::getValue(PKHelper::CPREFIX . 'DEFAULT_CURRENCY', 'EUR'));
-
+                Configuration::updateValue(PKHelper::CPREFIX . "DEFAULT_CURRENCY", Tools::getValue(PKHelper::CPREFIX . 'DEFAULT_CURRENCY', 'EUR'));
+            if (Tools::getIsset(PKHelper::CPREFIX . 'USRNAME'))
+                Configuration::updateValue(PKHelper::CPREFIX . "USRNAME", Tools::getValue(PKHelper::CPREFIX . 'USRNAME', ''));
+            if (Tools::getIsset(PKHelper::CPREFIX . 'USRPASSWD') && Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD', '') != "")
+                Configuration::updateValue(PKHelper::CPREFIX . "USRPASSWD", Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD', Configuration::get(PKHelper::CPREFIX . 'USRPASSWD')));
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
-
         return $_html;
     }
 
@@ -1399,14 +1418,15 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'DEFAULT_CURRENCY', PKHelper::CPREFIX . 'CRHTTPS',
             PKHelper::CPREFIX . 'PRODID_V1', PKHelper::CPREFIX . 'PRODID_V2',
             PKHelper::CPREFIX . 'PRODID_V3', PKHelper::CPREFIX . 'COOKIE_DOMAIN',
-            PKHelper::CPREFIX . 'SET_DOMAINS', PKHelper::CPREFIX . 'DNT', PKHelper::CPREFIX . 'EXHTML',
-            PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT',
+            PKHelper::CPREFIX . 'SET_DOMAINS', PKHelper::CPREFIX . 'DNT', 
+            PKHelper::CPREFIX . 'EXHTML', PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT',
+            PKHelper::CPREFIX . 'USRNAME', PKHelper::CPREFIX . 'USRPASSWD'
         );
         $defaults = array(
             0, "", 0, "", self::PK_VC_TIMEOUT, self::PK_SC_TIMEOUT, 'EUR', 0,
             '{ID}-{ATTRID}#{REFERENCE}', '{ID}#{REFERENCE}',
             '{ID}#{ATTRID}', Tools::getShopDomain(), '', 0,
-            '', self::PK_RC_TIMEOUT,
+            '', self::PK_RC_TIMEOUT,'',''
         );
         $ret = array();
         if ($form)
