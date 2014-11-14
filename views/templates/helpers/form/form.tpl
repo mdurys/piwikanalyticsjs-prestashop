@@ -115,6 +115,13 @@
 										{if isset($input.suffix)}{$input.suffix}{/if}
 										{if !empty($input.hint)}<span class="hint" name="help_box">{$input.hint}<span class="hint-pointer">&nbsp;</span></span>{/if}
 									{/if}
+                                                                {elseif $input.type == 'password'}
+									<input type="password"
+											name="{$input.name}"
+											size="{$input.size}"
+											class="{if isset($input.class)}{$input.class}{/if}"
+											value=""
+											{if isset($input.autocomplete) && !$input.autocomplete}autocomplete="off"{/if} />
 								{elseif $input.type == 'select'}
 									{if isset($input.options.query) && !$input.options.query && isset($input.empty_message)}
 										{$input.empty_message}
