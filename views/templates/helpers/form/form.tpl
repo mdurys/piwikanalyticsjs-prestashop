@@ -118,7 +118,7 @@
                                                                 {elseif $input.type == 'password'}
 									<input type="password"
 											name="{$input.name}"
-											size="{$input.size}"
+											{if isset($input.size)}size="{$input.size}"{/if}
 											class="{if isset($input.class)}{$input.class}{/if}"
 											value=""
 											{if isset($input.autocomplete) && !$input.autocomplete}autocomplete="off"{/if} />
