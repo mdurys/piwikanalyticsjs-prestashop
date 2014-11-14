@@ -50,6 +50,12 @@ class PKHelper {
     protected static $_cachedResults = array();
 
     /**
+     * for Prestashop 1.4 translation
+     * @var piwikanalyticsjs 
+     */
+    public static $_module = null;
+
+    /**
      * prefix to use for configurations values
      */
     const CPREFIX = "PIWIK_";
@@ -159,11 +165,18 @@ class PKHelper {
                 return false;
             }
             if ((bool) self::$_cachedResults[$md5Url][0]->ecommerce === false || self::$_cachedResults[$md5Url][0]->ecommerce == 0) {
-                self::$error = self::l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page');
+
+                if ((_PS_VERSION_ < '1.5'))
+                    self::$error = self::l('E-commerce is not active for your site in piwik!');
+                else
+                    self::$error = self::l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
             if ((bool) self::$_cachedResults[$md5Url][0]->sitesearch === false || self::$_cachedResults[$md5Url][0]->sitesearch == 0) {
-                self::$error = self::l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page');
+                if ((_PS_VERSION_ < '1.5'))
+                    self::$error = self::l('Site search is not active for your site in piwik!');
+                else
+                    self::$error = self::l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page');
                 self::$errors[] = self::$error;
             }
             return self::$_cachedResults[$md5Url];
@@ -312,6 +325,8 @@ class PKHelper {
      * @see Module::l
      */
     private static function l($string, $specific = false) {
+        if (_PS_VERSION_ < '1.5')
+            return PKHelper::$_module->l($string, ($specific) ? $specific : 'pkhelper');
         return Translate::getModuleTranslation('piwikanalyticsjs', $string, ($specific) ? $specific : 'pkhelper');
         // the following lines are need for the translation to work properly
         // $this->l('I need Site ID and Auth Token before i can get your image tracking code')
