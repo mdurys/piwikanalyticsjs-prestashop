@@ -1182,6 +1182,7 @@ class piwikanalyticsjs extends Module {
      * @since 0.5
      */
     public function hookAdminStatsModules($params) {
+        $http = ((bool) Configuration::get(PKHelper::CPREFIX . 'CRHTTPS') ? 'https://' : 'http://');
         $PIWIK_HOST = Configuration::get(PKHelper::CPREFIX . 'HOST');
         $PIWIK_SITEID = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
         $PIWIK_TOKEN_AUTH = Configuration::get(PKHelper::CPREFIX . 'TOKEN_AUTH');
@@ -1190,12 +1191,22 @@ class piwikanalyticsjs extends Module {
                 (empty($PIWIK_TOKEN_AUTH) || $PIWIK_TOKEN_AUTH === FALSE))
             return "<h3>{$this->l("You need to set 'Piwik host url', 'Piwik token auth' and 'Piwik site id', and save them before the dashboard can be shown here")}</h3>";
         $lng = new Language($params['cookie']->id_lang);
+
+        $user = Configuration::get(PKHelper::CPREFIX . 'USRNAME');
+        $passwd = Configuration::get(PKHelper::CPREFIX . 'USRPASSWD');
+        if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE))
+            $PKUILINK = $http . $PIWIK_HOST . 'index.php?module=Login&action=logme&login=' . $user . '&password=' . md5($passwd) . '&idSite=' . $PIWIK_SITEID;
+        else
+            $PKUILINK = $http . $PIWIK_HOST . 'index.php';
+
         $html = '<script type="text/javascript">function WidgetizeiframeDashboardLoaded() {var w = $(\'#content\').width();var h = $(\'body\').height();$(\'#WidgetizeiframeDashboard\').width(\'100%\');$(\'#WidgetizeiframeDashboard\').height(h);}</script>'
                 . '<fieldset class="width3">'
-                . '<legend><img src="../modules/' . $this->name . '/logo.gif" /> ' . $this->displayName . '</legend>'
+                . '<legend><img src="../modules/' . $this->name . '/logo.gif" /> ' . $this->displayName . ''
+                . ' | <a target="_blank" href="' . $PKUILINK . '">' . $this->l('Piwik') . '</a>'
+                . ' | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">' . $this->l('Help') . '</a>'
+                . '</legend>'
                 . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
-                . 'src="' . ((bool) Configuration::get(PKHelper::CPREFIX . 'CRHTTPS') ? 'https://' : 'http://')
-                . $PIWIK_HOST . 'index.php'
+                . 'src="' . $http . $PIWIK_HOST . 'index.php'
                 . '?module=Widgetize'
                 . '&action=iframe'
                 . '&moduleToWidgetize=Dashboard'
