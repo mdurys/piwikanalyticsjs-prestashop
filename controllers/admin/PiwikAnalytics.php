@@ -93,7 +93,7 @@ EOF;
                         . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
             }
         }
-        $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop');
+        $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki');
         // PKHelper::CPREFIX . 'USRNAME'
         $user = Configuration::get('PIWIK_USRNAME');
         // PKHelper::CPREFIX . 'USRPASSWD'
