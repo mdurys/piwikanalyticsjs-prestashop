@@ -114,9 +114,9 @@ EOF;
 
         $this->context->smarty->assign(array(
             'content' => $this->content,
-            'show_page_header_toolbar' => $this->show_page_header_toolbar,
-            'page_header_toolbar_title' => $this->page_header_toolbar_title,
-            'page_header_toolbar_btn' => $this->page_header_toolbar_btn
+            'show_page_header_toolbar' => (isset($this->show_page_header_toolbar) ? $this->show_page_header_toolbar : ''),
+            'page_header_toolbar_title' => (isset($this->page_header_toolbar_title) ? $this->page_header_toolbar_title : ''),
+            'page_header_toolbar_btn' => (isset($this->page_header_toolbar_btn) ? $this->page_header_toolbar_btn : ''),
         ));
     }
 
