@@ -53,6 +53,25 @@ class PiwikAnalyticsController extends ModuleAdminController {
         $http = ((bool) Configuration::get('PIWIK_CRHTTPS') ? 'https://' : 'http://');
         $PIWIK_HOST = Configuration::get('PIWIK_HOST');
         $PIWIK_SITEID = (int) Configuration::get('PIWIK_SITEID');
+        
+        $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki');
+        // PKHelper::CPREFIX . 'USRNAME'
+        $user = Configuration::get('PIWIK_USRNAME');
+        // PKHelper::CPREFIX . 'USRPASSWD'
+        $passwd = Configuration::get('PIWIK_USRPASSWD');
+        if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE)) {
+            $this->page_header_toolbar_btn['stats'] = array(
+                'href' => $http . $PIWIK_HOST . 'index.php?module=Login&action=logme&login=' . $user . '&password=' . md5($passwd) . '&idSite=' . $PIWIK_SITEID,
+                'desc' => $this->l('Piwik'),
+                'target' => true
+            );
+        } else {
+            $this->page_header_toolbar_btn['stats'] = array(
+                'href' => $http . $PIWIK_HOST . 'index.php',
+                'desc' => $this->l('Piwik'),
+                'target' => true
+            );
+        }
         if ($this->display == 'view') {
 
             // Some controllers use the view action without an object
@@ -78,6 +97,10 @@ class PiwikAnalyticsController extends ModuleAdminController {
 </script>   
 EOF;
                 $lng = new LanguageCore($this->context->cookie->id_lang);
+
+                if (_PS_VERSION_ < '1.6')
+                    $this->content .= '<h3><a target="_blank" href="'.$this->page_header_toolbar_btn['stats']['href'].'">'.$this->page_header_toolbar_btn['stats']['desc'].'</a> | <a target="_blank" href="https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki">'.$this->l('Help').'</a></h3>';
+
                 $this->content .= ''
                         . '<iframe id="WidgetizeiframeDashboard"  onload="WidgetizeiframeDashboardLoaded();" '
                         . 'src="' . $http
@@ -92,24 +115,6 @@ EOF;
                         . '&language=' . $lng->iso_code
                         . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>';
             }
-        }
-        $this->context->smarty->assign('help_link', 'https://github.com/cmjnisse/piwikanalyticsjs-prestashop/wiki');
-        // PKHelper::CPREFIX . 'USRNAME'
-        $user = Configuration::get('PIWIK_USRNAME');
-        // PKHelper::CPREFIX . 'USRPASSWD'
-        $passwd = Configuration::get('PIWIK_USRPASSWD');
-        if ((!empty($user) && $user !== FALSE) && (!empty($passwd) && $passwd !== FALSE)) {
-            $this->page_header_toolbar_btn['stats'] = array(
-                'href' => $http . $PIWIK_HOST . 'index.php?module=Login&action=logme&login=' . $user . '&password=' . md5($passwd) . '&idSite=' . $PIWIK_SITEID,
-                'desc' => $this->l('Piwik'),
-                'target' => true
-            );
-        } else {
-            $this->page_header_toolbar_btn['stats'] = array(
-                'href' => $http . $PIWIK_HOST . 'index.php',
-                'desc' => $this->l('Piwik'),
-                'target' => true
-            );
         }
 
         $this->context->smarty->assign(array(
