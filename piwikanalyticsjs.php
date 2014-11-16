@@ -116,7 +116,6 @@ class piwikanalyticsjs extends Module {
     public function getContent() {
         if (_PS_VERSION_ < '1.5')
             global $currentIndex;
-
         if (Tools::getIsset('pkapicall')) {
             $this->__pkapicall();
             die();
@@ -479,7 +478,7 @@ class piwikanalyticsjs extends Module {
                         array(
                             'type' => 'html',
                             'name' => $this->l('In this section you can modify your settings in piwik just so you don\'t have to login to Piwik to do this') . "<br>"
-                            . "<strong>" . $this->l('Currently selected name') . "</strong>: <i>{$this->piwikSite[0]->name}</i><br>"
+                            . "<strong>" . $this->l('Currently selected name') . "</strong>: <i id='wnamedsting'>{$this->piwikSite[0]->name}</i><br>"
                             . "<input type=\"hidden\" name=\"PKAdminIdSite\" id=\"PKAdminIdSite\" value=\"{$this->piwikSite[0]->idsite}\" />"
                         ),
                         array(
@@ -671,9 +670,7 @@ class piwikanalyticsjs extends Module {
                             . "            showLoadingStuff();\n"
                             . "        },\n"
                             . "        success: function(data) {\n"
-                            /* . "            if(data.error) {\n" */
                             . "                jAlert(data.message);\n"
-                            /* . "            }\n" */
                             . "        },\n"
                             . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
                             . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
@@ -694,8 +691,63 @@ class piwikanalyticsjs extends Module {
                             )
                             . "\n"
                             . "function ChangePKSiteEdit(id){\n"
-                            . "    alert('This function is not available..!');\n"
-                            . "    return false;\n"
+                            . "    $.ajax({\n"
+                            . "        type: 'POST',\n"
+                            . "        url: '" . $helper->currentIndex . "&token=" . $helper->token . "',\n"
+                            . "        dataType: 'json',\n"
+                            . "        data: {\n"
+                            . "            'pkapicall': 'getPiwikSite',\n"
+                            . "            'idSite': id,\n"
+                            . "        },\n"
+                            . "        beforeSend: function(){\n"
+                            . "            showLoadingStuff();\n"
+                            . "        },\n"
+                            . "        success: function(data) {\n"
+                            /* . "            $('#SPKSID').val(data.message[0].idSite);\n" */
+                            . "            $('#PKAdminIdSite').val(data.message[0].idsite);\n"
+                            . "            $('#PKAdminSiteName').val(data.message[0].name);\n"
+                            . "            $('#wnamedsting').text(data.message[0].name);\n"
+                            . "            /*$('#PKAdminSiteUrls').val(data.message[0].main_url);*/\n"
+                            . "            if(data.message[0].ecommerce===1){\n"
+                            . "                $('#PKAdminEcommerce_on').prop('checked', true);\n"
+                            . "                $('#PKAdminEcommerce_off').prop('checked', false);\n"
+                            . "            } else {\n"
+                            . "                $('#PKAdminEcommerce_off').prop('checked', true);\n"
+                            . "                $('#PKAdminEcommerce_on').prop('checked', false);\n"
+                            . "            }\n"
+                            . "            if(data.message[0].sitesearch===1){\n"
+                            . "                $('#PKAdminSiteSearch_on').prop('checked', true);\n"
+                            . "                $('#PKAdminSiteSearch_off').prop('checked', false);\n"
+                            . "            } else {\n"
+                            . "                $('#PKAdminSiteSearch_off').prop('checked', true);\n"
+                            . "                $('#PKAdminSiteSearch_on').prop('checked', false);\n"
+                            . "            }\n"
+                            . "            $('#PKAdminSearchKeywordParameters').val(data.message[0].sitesearch_keyword_parameters);\n"
+                            . "            $('#PKAdminSearchCategoryParameters').val(data.message[0].sitesearch_category_parameters);\n"
+                            . "            $('#PKAdminExcludedIps').val(data.message[0].excluded_ips);\n"
+                            . "            $('#PKAdminExcludedQueryParameters').val(data.message[0].excluded_parameters);\n"
+                            . "            $('#PKAdminTimezone').val(data.message[0].timezone);\n"
+                            . "            $('#PKAdminCurrency').val(data.message[0].currency);\n"
+                            . "            /*$('#PKAdminGroup').val(data.message[0].group);*/\n"
+                            . "            /*$('#PKAdminStartDate').val(data.message[0].ts_created);*/\n"
+                            . "            $('#PKAdminExcludedUserAgents').val(data.message[0].excluded_user_agents);\n"
+                            . "            if(data.message[0].keep_url_fragment===1){\n"
+                            . "                $('#PKAdminKeepURLFragments_on').prop('checked', true);\n"
+                            . "                $('#PKAdminKeepURLFragments_off').prop('checked', false);\n"
+                            . "            } else {\n"
+                            . "                $('#PKAdminKeepURLFragments_off').prop('checked', true);\n"
+                            . "                $('#PKAdminKeepURLFragments_on').prop('checked', false);\n"
+                            . "            }\n"
+                            . "            /*$('#PKAdminSiteType').val(data.message[0].type);*/\n"
+                            . "        },\n"
+                            . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
+                            . "            jAlert(\"Error while saving Piwik Data\\n\\ntextStatus: '\" + textStatus + \"'\\nerrorThrown: '\" + errorThrown + \"'\\nresponseText:\\n\" + XMLHttpRequest.responseText);\n"
+                            . "        },\n"
+                            . "        complete: function(){\n"
+                            . "            hideLoadingStuff();\n"
+                            . "        }\n"
+                            . "    });\n"
+                            . "    \n"
                             . "}\n"
                             . "</script>",
                         ),
@@ -729,7 +781,10 @@ class piwikanalyticsjs extends Module {
             if ($result === FALSE) {
                 die(Tools::jsonEncode(array('error' => TRUE, 'message' => $this->l('Unknown error occurred'))));
             } else {
-                $message = (is_string($result) && !is_bool($result) ? $result : (is_array($result) ? implode(', ', $result) : TRUE));
+                if (is_array($result) && isset($result[0])) {
+                    $message = $result;
+                } else
+                    $message = (is_string($result) && !is_bool($result) ? $result : (is_array($result) ? implode(', ', $result) : TRUE));
                 if (is_bool($message)) {
                     die(Tools::jsonEncode(array('error' => FALSE, 'message' => $this->l('Successfully Updated'))));
                 } else {

@@ -33,7 +33,12 @@ class PKHelper {
             'required' => array('idSite'),
             'optional' => array('siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
             'order' => array('idSite', 'siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
-        )
+        ),
+        'getPiwikSite'=>array(
+            'required' => array('idSite'),
+            'optional' => array(''),
+            'order' => array('idSite'),
+        ),
     );
 
     /**
@@ -63,7 +68,7 @@ class PKHelper {
     public static function updatePiwikSite($idSite, $siteName = NULL, $urls = NULL, $ecommerce = NULL, $siteSearch = NULL, $searchKeywordParameters = NULL, $searchCategoryParameters = NULL, $excludedIps = NULL, $excludedQueryParameters = NULL, $timezone = NULL, $currency = NULL, $group = NULL, $startDate = NULL, $excludedUserAgents = NULL, $keepURLFragments = NULL, $type = NULL) {
         if (!self::baseTest() || ($idSite <= 0))
             return false;
-        $url = self::getBaseURL();
+        $url = self::getBaseURL($idSite);
         $url .= "&method=SitesManager.updateSite&format=JSON";
         if ($siteName !== NULL)
             $url .= "&siteName=" . urlencode($siteName);
@@ -141,12 +146,13 @@ class PKHelper {
      * get Piwik site based on the current settings in the configuration
      * @return stdClass[]
      */
-    public static function getPiwikSite() {
-        $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
+    public static function getPiwikSite($idSite = 0) {
+        if ($idSite == 0)
+            $idSite = (int) Configuration::get(PKHelper::CPREFIX . 'SITEID');
         if (!self::baseTest() || ($idSite <= 0))
             return false;
 
-        $url = self::getBaseURL();
+        $url = self::getBaseURL($idSite);
         $url .= "&method=SitesManager.getSiteFromId&format=JSON";
         $md5Url = md5($url);
         if (!isset(self::$_cachedResults[$md5Url])) {
@@ -165,7 +171,6 @@ class PKHelper {
                 return false;
             }
             if ((bool) self::$_cachedResults[$md5Url][0]->ecommerce === false || self::$_cachedResults[$md5Url][0]->ecommerce == 0) {
-
                 if ((_PS_VERSION_ < '1.5'))
                     self::$error = self::l('E-commerce is not active for your site in piwik!');
                 else
@@ -320,7 +325,7 @@ class PKHelper {
         }
         return FALSE;
     }
-
+    
     /**
      * @see Module::l
      */
