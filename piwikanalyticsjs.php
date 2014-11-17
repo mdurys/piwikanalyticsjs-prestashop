@@ -726,20 +726,36 @@ class piwikanalyticsjs extends Module {
                             . "            $('#PKAdminSiteName').val(data.message[0].name);\n"
                             . "            $('#wnamedsting').text(data.message[0].name);\n"
                             . "            /*$('#PKAdminSiteUrls').val(data.message[0].main_url);*/\n"
-                            . "            if(data.message[0].ecommerce===1){\n"
-                            . "                $('#PKAdminEcommerce_on').prop('checked', true);\n"
-                            . "                $('#PKAdminEcommerce_off').prop('checked', false);\n"
-                            . "            } else {\n"
-                            . "                $('#PKAdminEcommerce_off').prop('checked', true);\n"
-                            . "                $('#PKAdminEcommerce_on').prop('checked', false);\n"
-                            . "            }\n"
-                            . "            if(data.message[0].sitesearch===1){\n"
-                            . "                $('#PKAdminSiteSearch_on').prop('checked', true);\n"
-                            . "                $('#PKAdminSiteSearch_off').prop('checked', false);\n"
-                            . "            } else {\n"
-                            . "                $('#PKAdminSiteSearch_off').prop('checked', true);\n"
-                            . "                $('#PKAdminSiteSearch_on').prop('checked', false);\n"
-                            . "            }\n"
+                            . ( (_PS_VERSION_ >= '1.6') ?
+                                    "            if(data.message[0].ecommerce===1){\n"
+                                    . "                $('#PKAdminEcommerce_on').prop('checked', true);\n"
+                                    . "                $('#PKAdminEcommerce_off').prop('checked', false);\n"
+                                    . "            } else {\n"
+                                    . "                $('#PKAdminEcommerce_off').prop('checked', true);\n"
+                                    . "                $('#PKAdminEcommerce_on').prop('checked', false);\n"
+                                    . "            }\n"
+                                    . "            if(data.message[0].sitesearch===1){\n"
+                                    . "                $('#PKAdminSiteSearch_on').prop('checked', true);\n"
+                                    . "                $('#PKAdminSiteSearch_off').prop('checked', false);\n"
+                                    . "            } else {\n"
+                                    . "                $('#PKAdminSiteSearch_off').prop('checked', true);\n"
+                                    . "                $('#PKAdminSiteSearch_on').prop('checked', false);\n"
+                                    . "            }\n" :
+                                    "            if(data.message[0].ecommerce===1){\n"
+                                    . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', true);\n"
+                                    . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', false);\n"
+                                    . "            } else {\n"
+                                    . "                $('input[id=active_off][name=PKAdminEcommerce]').prop('checked', true);\n"
+                                    . "                $('input[id=active_on][name=PKAdminEcommerce]').prop('checked', false);\n"
+                                    . "            }\n"
+                                    . "            if(data.message[0].sitesearch===1){\n"
+                                    . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', true);\n"
+                                    . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', false);\n"
+                                    . "            } else {\n"
+                                    . "                $('input[id=active_off][name=PKAdminSiteSearch]').prop('checked', true);\n"
+                                    . "                $('input[id=active_on][name=PKAdminSiteSearch]').prop('checked', false);\n"
+                                    . "            }\n"
+                            )
                             . "            $('#PKAdminSearchKeywordParameters').val(data.message[0].sitesearch_keyword_parameters);\n"
                             . "            $('#PKAdminSearchCategoryParameters').val(data.message[0].sitesearch_category_parameters);\n"
                             . "            $('#PKAdminExcludedIps').val(data.message[0].excluded_ips);\n"
@@ -749,13 +765,22 @@ class piwikanalyticsjs extends Module {
                             . "            /*$('#PKAdminGroup').val(data.message[0].group);*/\n"
                             . "            /*$('#PKAdminStartDate').val(data.message[0].ts_created);*/\n"
                             . "            $('#PKAdminExcludedUserAgents').val(data.message[0].excluded_user_agents);\n"
-                            . "            if(data.message[0].keep_url_fragment===1){\n"
-                            . "                $('#PKAdminKeepURLFragments_on').prop('checked', true);\n"
-                            . "                $('#PKAdminKeepURLFragments_off').prop('checked', false);\n"
-                            . "            } else {\n"
-                            . "                $('#PKAdminKeepURLFragments_off').prop('checked', true);\n"
-                            . "                $('#PKAdminKeepURLFragments_on').prop('checked', false);\n"
-                            . "            }\n"
+                            . ( (_PS_VERSION_ >= '1.6') ?
+                                    "            if(data.message[0].keep_url_fragment===1){\n"
+                                    . "                $('#PKAdminKeepURLFragments_on').prop('checked', true);\n"
+                                    . "                $('#PKAdminKeepURLFragments_off').prop('checked', false);\n"
+                                    . "            } else {\n"
+                                    . "                $('#PKAdminKeepURLFragments_off').prop('checked', true);\n"
+                                    . "                $('#PKAdminKeepURLFragments_on').prop('checked', false);\n"
+                                    . "            }\n" :
+                                    "            if(data.message[0].keep_url_fragment===1){\n"
+                                    . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
+                                    . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
+                                    . "            } else {\n"
+                                    . "                $('input[id=active_off][name=PKAdminKeepURLFragments]').prop('checked', true);\n"
+                                    . "                $('input[id=active_on][name=PKAdminKeepURLFragments]').prop('checked', false);\n"
+                                    . "            }\n"
+                            )
                             . "            /*$('#PKAdminSiteType').val(data.message[0].type);*/\n"
                             . "        },\n"
                             . "        error: function(XMLHttpRequest, textStatus, errorThrown){\n"
@@ -940,17 +965,17 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V3', Tools::getValue(PKHelper::CPREFIX . 'PRODID_V3', '{ID}#{ATTRID}'));
             if (Tools::getIsset(PKHelper::CPREFIX . 'DEFAULT_CURRENCY'))
                 Configuration::updateValue(PKHelper::CPREFIX . "DEFAULT_CURRENCY", Tools::getValue(PKHelper::CPREFIX . 'DEFAULT_CURRENCY', 'EUR'));
-            
+
             if (Tools::getIsset(PKHelper::CPREFIX . 'USRNAME'))
                 Configuration::updateValue(PKHelper::CPREFIX . "USRNAME", Tools::getValue(PKHelper::CPREFIX . 'USRNAME', ''));
             if (Tools::getIsset(PKHelper::CPREFIX . 'USRPASSWD') && Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD', '') != "")
                 Configuration::updateValue(PKHelper::CPREFIX . "USRPASSWD", Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD', Configuration::get(PKHelper::CPREFIX . 'USRPASSWD')));
-            
+
             if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHUSR'))
                 Configuration::updateValue(PKHelper::CPREFIX . "PAUTHUSR", Tools::getValue(PKHelper::CPREFIX . 'PAUTHUSR', ''));
             if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHPWD') && Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', '') != "")
                 Configuration::updateValue(PKHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD')));
-            
+
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
         return $_html;
