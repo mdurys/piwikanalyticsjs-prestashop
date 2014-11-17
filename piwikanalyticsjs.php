@@ -302,6 +302,29 @@ class piwikanalyticsjs extends Module {
         );
 
         $fields_form[0]['form']['input'][] = array(
+            'type' => 'select',
+            'label' => $this->l('Piwik Report date'),
+            'name' => PKHelper::CPREFIX . 'DREPDATE',
+            'desc' => $this->l('Report date to load by default from "Stats => Piwik Analytics"'),
+            'options' => array(
+                'default' => array('value' => 'day|today', 'label' => $this->l('Today')),
+                'query' => array(
+                    array('str' => 'day|today', 'name' => $this->l('Today')),
+                    array('str' => 'day|yesterday', 'name' => $this->l('Yesterday')),
+                    array('str' => 'range|previous7', 'name' => $this->l('Previous 7 days (not including today)')),
+                    array('str' => 'range|previous30', 'name' => $this->l('Previous 30 days (not including today)')),
+                    array('str' => 'range|last7', 'name' => $this->l('Last 7 days (including today)')),
+                    array('str' => 'range|last30', 'name' => $this->l('Last 30 days (including today)')),
+                    array('str' => 'week|today', 'name' => $this->l('Current Week')),
+                    array('str' => 'month|today', 'name' => $this->l('Current Month')),
+                    array('str' => 'year|today', 'name' => $this->l('Current Year')),
+                ),
+                'id' => 'str',
+                'name' => 'name'
+            ),
+        );
+
+        $fields_form[0]['form']['input'][] = array(
             'type' => 'text',
             'label' => $this->l('Piwik User name'),
             'name' => PKHelper::CPREFIX . 'USRNAME',
@@ -869,6 +892,7 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'USRPASSWD' => Configuration::get(PKHelper::CPREFIX . 'USRPASSWD'),
             PKHelper::CPREFIX . 'PAUTHUSR' => Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR'),
             PKHelper::CPREFIX . 'PAUTHPWD' => Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD'),
+            PKHelper::CPREFIX . 'DREPDATE' => Configuration::get(PKHelper::CPREFIX . 'DREPDATE'),
             /* stuff thats isset by ajax calls to Piwik API ---(here to avoid not isset warnings..!)--- */
             'PKAdminSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : ''),
             'PKAdminEcommerce' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ecommerce : ''),
@@ -975,7 +999,10 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue(PKHelper::CPREFIX . "PAUTHUSR", Tools::getValue(PKHelper::CPREFIX . 'PAUTHUSR', ''));
             if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHPWD') && Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', '') != "")
                 Configuration::updateValue(PKHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD')));
-
+            
+            if (Tools::getIsset(PKHelper::CPREFIX . 'DREPDATE'))
+                Configuration::updateValue(PKHelper::CPREFIX . "DREPDATE", Tools::getValue(PKHelper::CPREFIX . 'DREPDATE', 'day|tody'));
+            
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
         return $_html;
@@ -1309,6 +1336,14 @@ class piwikanalyticsjs extends Module {
         else
             $PKUILINK = $http . $PIWIK_HOST . 'index.php';
 
+        $DREPDATE = Configuration::get(PKHelper::CPREFIX . 'DREPDATE');
+        if ($DREPDATE !== FALSE && (strpos($DREPDATE, '|') !== FALSE)) {
+            list($period, $date) = explode('|', $DREPDATE);
+        } else {
+            $period = "day";
+            $date = "today";
+        }
+
         $html = '<script type="text/javascript">function WidgetizeiframeDashboardLoaded() {var w = $(\'#content\').width();var h = $(\'body\').height();$(\'#WidgetizeiframeDashboard\').width(\'100%\');$(\'#WidgetizeiframeDashboard\').height(h);}</script>'
                 . '<fieldset class="width3">'
                 . '<legend><img src="../modules/' . $this->name . '/logo.gif" /> ' . $this->displayName . ''
@@ -1322,10 +1357,11 @@ class piwikanalyticsjs extends Module {
                 . '&moduleToWidgetize=Dashboard'
                 . '&actionToWidgetize=index'
                 . '&idSite=' . $PIWIK_SITEID
-                . '&period=day'
+                . '&period=' . $period
                 . '&language=' . $lng->iso_code
                 . '&token_auth=' . $PIWIK_TOKEN_AUTH
-                . '&date=today" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>'
+                . '&date=' . $date
+                . '" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="550px"></iframe>'
                 . '</fieldset>';
         return $html;
     }
@@ -1552,13 +1588,14 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'SET_DOMAINS', PKHelper::CPREFIX . 'DNT',
             PKHelper::CPREFIX . 'EXHTML', PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT',
             PKHelper::CPREFIX . 'USRNAME', PKHelper::CPREFIX . 'USRPASSWD',
-            PKHelper::CPREFIX . 'PAUTHUSR', PKHelper::CPREFIX . 'PAUTHPWD'
+            PKHelper::CPREFIX . 'PAUTHUSR', PKHelper::CPREFIX . 'PAUTHPWD',
+            PKHelper::CPREFIX . 'DREPDATE'
         );
         $defaults = array(
             0, "", 0, "", self::PK_VC_TIMEOUT, self::PK_SC_TIMEOUT, 'EUR', 0,
             '{ID}-{ATTRID}#{REFERENCE}', '{ID}#{REFERENCE}',
             '{ID}#{ATTRID}', Tools::getShopDomain(), '', 0,
-            '', self::PK_RC_TIMEOUT, '', '', '', ''
+            '', self::PK_RC_TIMEOUT, '', '', '', '', 'day|today'
         );
         $ret = array();
         if ($form)
