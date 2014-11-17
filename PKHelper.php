@@ -34,7 +34,7 @@ class PKHelper {
             'optional' => array('siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
             'order' => array('idSite', 'siteName', 'urls', 'ecommerce', 'siteSearch', 'searchKeywordParameters', 'searchCategoryParameters', 'excludedIps', 'excludedQueryParameters', 'timezone', 'currency', 'group', 'startDate', 'excludedUserAgents', 'keepURLFragments', 'type'),
         ),
-        'getPiwikSite'=>array(
+        'getPiwikSite' => array(
             'required' => array('idSite'),
             'optional' => array(''),
             'order' => array('idSite'),
@@ -297,13 +297,21 @@ class PKHelper {
     protected static function getAsJsonDecoded($url) {
         static $_error2 = FALSE;
         $lng = strtolower((isset(Context::getContext()->language->iso_code) ? Context::getContext()->language->iso_code : 'en'));
+
+        $httpauth = "";
+        $httpauth_usr = Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR');
+        $httpauth_pwd = Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD');
+        if ((!empty($httpauth_usr) && !is_null($httpauth_usr) && $httpauth_usr !== false) && (!empty($httpauth_pwd) && !is_null($httpauth_pwd) && $httpauth_pwd !== false)) {
+            $httpauth = "Authorization: Basic " . base64_encode("$httpauth_usr:$httpauth_pwd") . "\r\n";
+        }
+
         $options = array(
             'http' => array(
+                'user_agent' => (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : ''),
                 'method' => "GET",
-                'header' => "Accept-language: {$lng}\r\n" .
-                /* sprintf("Accept-Language: %s\r\n", @str_replace(array("\n", "\t", "\r"), "", $_SERVER['HTTP_ACCEPT_LANGUAGE'])), */
-                (isset($_SERVER['HTTP_USER_AGENT']) ? "User-Agent: {$_SERVER['HTTP_USER_AGENT']}\r\n" : '')
-            /* tested on server that denied empty(or php default) user agent so set it to browser */
+                'header' =>
+                "Accept-language: {$lng}\r\n" .
+                $httpauth
             )
         );
 
@@ -325,7 +333,7 @@ class PKHelper {
         }
         return FALSE;
     }
-    
+
     /**
      * @see Module::l
      */

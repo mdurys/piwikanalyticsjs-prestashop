@@ -415,6 +415,24 @@ class piwikanalyticsjs extends Module {
                     'hint' => $this->l('this value must be set in minutes'),
                     'desc' => $this->l('Piwik Referral Cookie timeout, the default is 6 months (262974 minutes)'),
                 ),
+                array(
+                    'type' => 'html',
+                    'name' => "<strong>{$this->l('Piwik Proxy Script Authorization? if your piwik is installed behind HTTP Basic Authorization (Both password and username must be filled before the values will be used)')}</strong>"
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Proxy Script Username'),
+                    'name' => PKHelper::CPREFIX . 'PAUTHUSR',
+                    'required' => false,
+                    'desc' => $this->l('this field along with password can be used if your piwik installation is protected by HTTP Basic Authorization'),
+                ),
+                array(
+                    'type' => 'password',
+                    'label' => $this->l('Proxy Script Password'),
+                    'name' => PKHelper::CPREFIX . 'PAUTHPWD',
+                    'required' => false,
+                    'desc' => $this->l('this field along with username can be used if your piwik installation is protected by HTTP Basic Authorization'),
+                ),
             ),
             'submit' => array(
                 'title' => $this->l('Save'),
@@ -824,6 +842,8 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'PROXY_SCRIPT' => empty($PIWIK_PROXY_SCRIPT) ? str_replace(array("http://", "https://"), '', self::getModuleLink($this->name, 'piwik')) : $PIWIK_PROXY_SCRIPT,
             PKHelper::CPREFIX . 'USRNAME' => Configuration::get(PKHelper::CPREFIX . 'USRNAME'),
             PKHelper::CPREFIX . 'USRPASSWD' => Configuration::get(PKHelper::CPREFIX . 'USRPASSWD'),
+            PKHelper::CPREFIX . 'PAUTHUSR' => Configuration::get(PKHelper::CPREFIX . 'PAUTHUSR'),
+            PKHelper::CPREFIX . 'PAUTHPWD' => Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD'),
             /* stuff thats isset by ajax calls to Piwik API ---(here to avoid not isset warnings..!)--- */
             'PKAdminSiteName' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->name : ''),
             'PKAdminEcommerce' => ($this->piwikSite !== FALSE ? $this->piwikSite[0]->ecommerce : ''),
@@ -895,6 +915,9 @@ class piwikanalyticsjs extends Module {
                 $tmp = (int) ($tmp * 60); //* convert to seconds
                 Configuration::updateValue(PKHelper::CPREFIX . 'SESSION_TIMEOUT', $tmp);
             }
+            /*
+             * @todo VALIDATE!!!, YES VALIDATE!!! thank you ...
+             */
             if (Tools::getIsset(PKHelper::CPREFIX . 'USE_PROXY'))
                 Configuration::updateValue(PKHelper::CPREFIX . 'USE_PROXY', Tools::getValue(PKHelper::CPREFIX . 'USE_PROXY'));
             if (Tools::getIsset(PKHelper::CPREFIX . 'EXHTML'))
@@ -917,10 +940,17 @@ class piwikanalyticsjs extends Module {
                 Configuration::updateValue(PKHelper::CPREFIX . 'PRODID_V3', Tools::getValue(PKHelper::CPREFIX . 'PRODID_V3', '{ID}#{ATTRID}'));
             if (Tools::getIsset(PKHelper::CPREFIX . 'DEFAULT_CURRENCY'))
                 Configuration::updateValue(PKHelper::CPREFIX . "DEFAULT_CURRENCY", Tools::getValue(PKHelper::CPREFIX . 'DEFAULT_CURRENCY', 'EUR'));
+            
             if (Tools::getIsset(PKHelper::CPREFIX . 'USRNAME'))
                 Configuration::updateValue(PKHelper::CPREFIX . "USRNAME", Tools::getValue(PKHelper::CPREFIX . 'USRNAME', ''));
             if (Tools::getIsset(PKHelper::CPREFIX . 'USRPASSWD') && Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD', '') != "")
                 Configuration::updateValue(PKHelper::CPREFIX . "USRPASSWD", Tools::getValue(PKHelper::CPREFIX . 'USRPASSWD', Configuration::get(PKHelper::CPREFIX . 'USRPASSWD')));
+            
+            if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHUSR'))
+                Configuration::updateValue(PKHelper::CPREFIX . "PAUTHUSR", Tools::getValue(PKHelper::CPREFIX . 'PAUTHUSR', ''));
+            if (Tools::getIsset(PKHelper::CPREFIX . 'PAUTHPWD') && Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', '') != "")
+                Configuration::updateValue(PKHelper::CPREFIX . "PAUTHPWD", Tools::getValue(PKHelper::CPREFIX . 'PAUTHPWD', Configuration::get(PKHelper::CPREFIX . 'PAUTHPWD')));
+            
             $_html .= $this->displayConfirmation($this->l('Configuration Updated'));
         }
         return $_html;
@@ -1496,13 +1526,14 @@ class piwikanalyticsjs extends Module {
             PKHelper::CPREFIX . 'PRODID_V3', PKHelper::CPREFIX . 'COOKIE_DOMAIN',
             PKHelper::CPREFIX . 'SET_DOMAINS', PKHelper::CPREFIX . 'DNT',
             PKHelper::CPREFIX . 'EXHTML', PKHelper::CPREFIX . 'RCOOKIE_TIMEOUT',
-            PKHelper::CPREFIX . 'USRNAME', PKHelper::CPREFIX . 'USRPASSWD'
+            PKHelper::CPREFIX . 'USRNAME', PKHelper::CPREFIX . 'USRPASSWD',
+            PKHelper::CPREFIX . 'PAUTHUSR', PKHelper::CPREFIX . 'PAUTHPWD'
         );
         $defaults = array(
             0, "", 0, "", self::PK_VC_TIMEOUT, self::PK_SC_TIMEOUT, 'EUR', 0,
             '{ID}-{ATTRID}#{REFERENCE}', '{ID}#{REFERENCE}',
             '{ID}#{ATTRID}', Tools::getShopDomain(), '', 0,
-            '', self::PK_RC_TIMEOUT, '', ''
+            '', self::PK_RC_TIMEOUT, '', '', '', ''
         );
         $ret = array();
         if ($form)
