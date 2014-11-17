@@ -346,6 +346,8 @@ class PKHelper {
         // $this->l('E-commerce is not active for your site in piwik!, you can enable it in the advanced settings on this page')
         // $this->l('Site search is not active for your site in piwik!, you can enable it in the advanced settings on this page')
         // $this->l('Unable to connect to api %s')
+        // $this->l('E-commerce is not active for your site in piwik!')
+        // $this->l('Site search is not active for your site in piwik!')
     }
 
 }
