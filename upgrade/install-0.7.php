@@ -31,5 +31,10 @@
 function upgrade_module_0_7($module) {
     Configuration::updateValue("PIWIK_DEFAULT_CURRENCY", 'EUR');
     Configuration::updateValue("PIWIK_RCOOKIE_TIMEOUT", (int) (262974 * 60));
+    Configuration::updateValue("PIWIK_USRNAME", '');
+    Configuration::updateValue("PIWIK_USRPASSWD", '');
+    Configuration::updateValue("PIWIK_PAUTHUSR", '');
+    Configuration::updateValue("PIWIK_PAUTHPWD", '');
+    Configuration::updateValue("PIWIK_DREPDATE", 'day|today');
     return true;
 }
