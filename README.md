@@ -28,7 +28,7 @@ Translations
 
  - English (Default)
  - Danish [98%/100%] Prestahop 1.4, 1.5, 1.6
- - Polish [40%/100%] (By Micha? Durys, @mdurys) Prestahop 1.5, 1.6
+ - Polish [40%/100%] By Michal Durys, @mdurys Prestahop 1.5, 1.6
 
 Installation
 --------------
