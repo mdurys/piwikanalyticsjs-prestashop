@@ -41,8 +41,6 @@ Bugs, New features
 --------------
 can only be fixed or added if they are reported, feel free use the issue system here at GitHub in case you don't like to use Github you are also welcome to report them by mail to "piwikanalyticsjs [AT] cmjscripter.net" (Text Only), note that if your mail gets flagged as spam i will not receive them.
 
-before you report ANY issues please read this [wiki page first].
-
 if your are reporting issues in the master branch DON'T unless you propose a way to fix the issue, the master branch is for development only.
 
 if you are posting an issue in the issue tracker here at GitHub please don't post in a closed topic unless the issue is the same or directly related to that issue, always create a new issue if you are unsure, also include the full version number of PrestaShop and Piwik you are using
